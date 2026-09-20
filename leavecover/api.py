@@ -197,6 +197,30 @@ for _a in db.all_assignments():
 chatmod.bind(engine=engine, store=store, rb=rb, db=db, submit_fn=submit, CheckIn=CheckIn, withdraw_fn=lambda rid: withdraw(rid))
 
 
+CLOSED_PAGE = """<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shift-H</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,#E3F3F4,#F2F5F8 45%,#ECE9FA);color:#1C2733}
+.c{background:#fff;border:1px solid #D9E1EA;border-top:5px solid #0E7C86;border-radius:14px;padding:32px;max-width:440px;margin:24px;box-shadow:0 12px 32px rgba(23,50,77,.18)}
+.m{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#0E7C86;color:#fff;font-weight:800;margin-right:10px;vertical-align:middle}
+h1{font-size:22px;color:#17324D;margin:14px 0 8px}p{color:#46586A;line-height:1.5;margin:0 0 10px}
+a.b{display:inline-block;margin-top:8px;background:#0E7C86;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:600}</style></head>
+<body><div class="c"><span class="m">SH</span><b style="color:#17324D;font-size:18px">Shift-H</b><h1>The demo has ended</h1>
+<p>Shift-H, the clinician leave and cover assistant built for the WA Health hackathon, is no longer open to the public.</p>
+<p>Access is available on request.</p>{contact}</div></body></html>"""
+
+
+@app.middleware('http')
+async def _demo_closed(request, call_next):
+    """DEMO_CLOSED=1 puts a closed page in front of everything (pages and API); DEMO_CONTACT adds a request-access link."""
+    if os.environ.get('DEMO_CLOSED', '') not in ('', '0', 'false'):
+        from fastapi.responses import HTMLResponse, JSONResponse
+        if request.url.path.startswith('/api/'):
+            return JSONResponse({'detail': 'The demo has ended. Access is available on request.'}, status_code=403)
+        contact = os.environ.get('DEMO_CONTACT', '')
+        link = f'<a class="b" href="mailto:{contact}?subject=Shift-H%20access%20request">Request access</a>' if contact else ''
+        return HTMLResponse(CLOSED_PAGE.replace('{contact}', link), status_code=503, headers={'Cache-Control': 'no-store'})
+    return await call_next(request)
+
+
 @app.middleware('http')
 async def _security_headers(request, call_next):
     resp = await call_next(request)
