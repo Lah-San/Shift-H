@@ -9,7 +9,7 @@ COPY . .
 # listen on all interfaces on the host's port; keep the request database on local disk
 ENV HOST=0.0.0.0 PORT=8080 LEAVECOVER_DB=/tmp/shift-h/leavecover.db
 # secrets are injected by the host, never baked in: GEMINI_API_KEY, ADMIN_PASSWORD, MANAGER_PASSWORD, STAFF_PASSWORD
-RUN useradd -m app && mkdir -p /tmp/shift-h && chown -R app /app /tmp/shift-h
+RUN useradd -m -u 1000 app && mkdir -p /tmp/shift-h && chown -R app /app /tmp/shift-h   # uid 1000 as Hugging Face Spaces expects
 USER app
 EXPOSE 8080
 CMD ["python", "run.py"]

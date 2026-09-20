@@ -1,3 +1,13 @@
+---
+title: Shift-H
+emoji: 🏥
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8080
+pinned: false
+---
+
 # Shift-H — clinician leave and cover
 
 WA Health hackathon, Challenge 3: *when a clinician asks for leave, how might an AI agent recommend the best approach to cover, or explain exactly why those dates won't work?*
