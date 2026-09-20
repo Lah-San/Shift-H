@@ -100,7 +100,7 @@
       <div class="screen-head"><div><h1>Ask the assistant</h1><p>Plain-language questions about your leave. It uses the same rules as the form and never shows colleagues' details.</p></div><span class="tiny muted" id="engine"></span></div>
       <div class="card chat-wrap">
         <aside class="convs">
-          <div class="card-h"><h2>Conversations</h2><button class="btn sm" id="chat-new">New</button></div>
+          <div class="card-h"><h2>Conversations</h2><div style="display:flex;gap:10px;align-items:center"><button class="btn sm" id="chat-new">New</button><button class="link convs-close" id="convs-close" aria-label="Close conversations">✕ Close</button></div></div>
           <div class="list" id="convs"><div class="empty small">No conversations yet.</div></div>
         </aside>
         <div class="chat">
@@ -114,7 +114,7 @@
               <button class="chip">Can I take two weeks over Christmas?</button>
               <button class="chip">I'm sick today</button>
             </div>
-            <form id="chat-form"><input id="chat-in" placeholder="Type a question, e.g. can I take two weeks before Christmas?" autocomplete="off"><button class="btn primary" type="submit">Send</button></form>
+            <form id="chat-form"><input id="chat-in" placeholder="Ask about your leave…" autocomplete="off" enterkeyhint="send"><button class="btn primary send" type="submit" aria-label="Send"><span class="send-txt">Send</span><svg class="send-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg></button></form>
             <span class="chat-note">AI-assisted. Replies are checked against the rulebook; nothing is submitted until you confirm; a manager decides.</span>
           </div>
         </div>

@@ -256,4 +256,7 @@ $('#ro-prev').onclick = () => { roMonth = new Date(roMonth.getFullYear(), roMont
 $('#ro-next').onclick = () => { roMonth = new Date(roMonth.getFullYear(), roMonth.getMonth() + 1, 1); renderRoster(); };
 $('#ro-today').onclick = () => { roMonth = null; renderRoster(); };
 $('#convs-toggle').onclick = () => $('.convs').classList.toggle('open');
+$('#convs-close').onclick = () => $('.convs').classList.remove('open');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('.convs').classList.remove('open'); });
+$('#chat-new').addEventListener('click', () => $('.convs').classList.remove('open'));
 document.getElementById('convs').addEventListener('click', e => { if (e.target.closest('.item')) $('.convs').classList.remove('open'); });
