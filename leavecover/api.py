@@ -264,7 +264,7 @@ def _chat_limit(who: dict, request):
         _prompt_log[key] = hits
         if len(hits) >= limit:
             wait = int((window - (now - hits[0])) / 60) + 1
-            raise HTTPException(429, f'Prompt limit reached for {label} ({limit} every {int(window // 60)} minutes). Try again in about {wait} minute{"s" if wait != 1 else ""}. The Request leave form still works.')
+            raise HTTPException(429, f'Assistant paused for {label}: this demo allows {limit} Gemini prompts every {int(window // 60)} minutes so the shared free quota lasts the whole event, and that limit has been reached. It resets in about {wait} minute{"s" if wait != 1 else ""}. The Request leave form, best windows and cover requests keep working without the assistant.')
     for key, limit, _ in checks:
         if limit > 0:
             _prompt_log.setdefault(key, []).append(now)

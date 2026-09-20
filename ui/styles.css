@@ -185,3 +185,5 @@ details.more summary::before{content:"\25B8";font-size:12px} details.more[open] 
 
 .sidenav button.urgent .count{background:var(--warn-bg);color:var(--warn);border-color:#F0D48A;font-weight:700}
 .sidenav .group{display:flex;flex-direction:column;gap:4px}
+
+.msg.ai .bubble.notice{background:var(--warn-bg);border-color:#F0D48A;color:var(--navy)}

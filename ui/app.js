@@ -185,7 +185,7 @@ async function send(text) {
     if (r.warning) addMsg('ai', r.warning).firstChild.classList.add('working');
     if (r.decision) wireCard(addCard(card(r.decision)));
     refreshMe(); loadConvs();
-  } catch (err) { clearInterval(tick); b.classList.remove('working'); b.textContent = /limit|minute/i.test(err.message) ? err.message : 'The server could not be reached: ' + err.message; }
+  } catch (err) { clearInterval(tick); b.classList.remove('working'); if (/paused|limit|minute/i.test(err.message)) { b.classList.add('notice'); b.textContent = err.message; } else b.textContent = 'The server could not be reached: ' + err.message; }
 }
 async function loadConvs() {
   let rows = []; try { rows = await api(`/api/me/${session.get().user}/conversations`); } catch (e) { }
