@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy, datetime as dt, os, collections, re, time
 from typing import Any, Optional
 import json, secrets, hashlib
-from fastapi import FastAPI, HTTPException, Query, Header, UploadFile, File, Form, Depends
+from fastapi import FastAPI, HTTPException, Query, Header, UploadFile, File, Form, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -237,6 +237,40 @@ def login(body: LoginIn):
     _tokens[tok] = {'user': u, 'role': role, 'ts': now}
     db.audit(u, 'login', None, {'role': role})
     return {'token': tok, 'user': u, 'role': role}
+
+
+_prompt_log: dict[str, list] = {}   # 'u:<account>' / 'ip:<address>' -> timestamps of chat prompts
+
+
+def _client_ip(request) -> str:
+    xff = request.headers.get('x-forwarded-for', '') if request is not None else ''
+    if xff:
+        return xff.split(',')[0].strip()
+    return (request.client.host if request is not None and request.client else '') or 'unknown'
+
+
+def _chat_limit(who: dict, request):
+    """30 prompts per 30 minutes per signed-in account and 15 per IP address by default (settings chat_prompts_per_user,
+    chat_prompts_per_ip, chat_limit_window_minutes). Raises 429 with the wait time."""
+    st = rb.settings
+    window = float(st.get('chat_limit_window_minutes', 30)) * 60
+    now = time.time()
+    checks = [('u:' + who['user'], int(st.get('chat_prompts_per_user', 30)), 'this account'),
+              ('ip:' + _client_ip(request), int(st.get('chat_prompts_per_ip', 15)), 'this network address')]
+    for key, limit, label in checks:
+        if limit <= 0:
+            continue
+        hits = [t for t in _prompt_log.get(key, []) if now - t < window]
+        _prompt_log[key] = hits
+        if len(hits) >= limit:
+            wait = int((window - (now - hits[0])) / 60) + 1
+            raise HTTPException(429, f'Prompt limit reached for {label} ({limit} every {int(window // 60)} minutes). Try again in about {wait} minute{"s" if wait != 1 else ""}. The Request leave form still works.')
+    for key, limit, _ in checks:
+        if limit > 0:
+            _prompt_log.setdefault(key, []).append(now)
+    if len(_prompt_log) > 20000:
+        for k in [k for k, v in _prompt_log.items() if not v or now - v[-1] > window]:
+            _prompt_log.pop(k, None)
 
 
 def require_user(x_auth_token: str = Header(default='')):
@@ -1094,8 +1128,9 @@ def policy_reference(code: str):
 
 # ----------------------------------------------------------------------------- chat
 @app.post('/api/chat')
-def chat(body: ChatIn, who=Depends(require_user)):
+def chat(body: ChatIn, request: Request, who=Depends(require_user)):
     _own(who, body.employee_id)
+    _chat_limit(who, request)
     _emp_or_404(body.employee_id)
     db.chat_log(body.employee_id, body.session_id, 'user', body.message)
     out = chatmod.handle(body.employee_id, body.session_id, body.message)
@@ -1104,8 +1139,9 @@ def chat(body: ChatIn, who=Depends(require_user)):
 
 
 @app.post('/api/chat/stream')
-def chat_stream(body: ChatIn, who=Depends(require_user)):
+def chat_stream(body: ChatIn, request: Request, who=Depends(require_user)):
     _own(who, body.employee_id)
+    _chat_limit(who, request)
     """Same as /api/chat but streams progress lines (server-sent events) while the assistant works. Every exchange is kept
     in the staff member's own conversation history."""
     _emp_or_404(body.employee_id)

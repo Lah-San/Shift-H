@@ -17,6 +17,9 @@ settings:
   alternatives_search_after_days: 56
   alternatives_max: 3
   auto_approve_when_fully_covered: false
+  chat_prompts_per_user: 30          # chat prompts a signed-in account may send per window
+  chat_prompts_per_ip: 15            # chat prompts one IP address may send per window (all accounts)
+  chat_limit_window_minutes: 30
   auto_accept_sick_leave: true
   cover_recommendations_for_sick_leave: true
   extra_shift_lookback_days: 28

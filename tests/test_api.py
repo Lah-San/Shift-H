@@ -316,3 +316,25 @@ def test_chat_answers_holiday_dates_from_the_calendar():
     r = client.post('/api/chat', json={'employee_id': eid, 'session_id': 'ph', 'message': 'when is anzac day'}).json()
     assert 'Sunday 25 April 2027' in r['reply'] and 'Monday 26 April' in r['reply']
     api.db.delete_conversation(eid, 'ph')
+
+
+def test_chat_prompt_limits_per_account_and_ip():
+    eid = _staff_with_balance()
+    saved = {k: api.rb.settings.get(k) for k in ('chat_prompts_per_user', 'chat_prompts_per_ip', 'chat_limit_window_minutes')}
+    api.rb.settings.update({'chat_prompts_per_user': 3, 'chat_prompts_per_ip': 100, 'chat_limit_window_minutes': 30})
+    api._prompt_log.clear()
+    try:
+        codes = [client.post('/api/chat', json={'employee_id': eid, 'session_id': 'rl', 'message': "What's my leave balance?"}).status_code for _ in range(4)]
+        assert codes == [200, 200, 200, 429]
+        r = client.post('/api/chat', json={'employee_id': eid, 'session_id': 'rl', 'message': 'hi'})
+        assert r.status_code == 429 and 'minute' in r.json()['detail']
+        # the form still works
+        assert client.get(f'/api/me/{eid}').status_code == 200
+        # per-IP limit counts across accounts
+        api._prompt_log.clear(); api.rb.settings.update({'chat_prompts_per_user': 100, 'chat_prompts_per_ip': 2})
+        codes = [client.post('/api/chat', json={'employee_id': eid, 'session_id': 'rl', 'message': 'hi'}, headers={'X-Forwarded-For': '203.0.113.9'}).status_code for _ in range(3)]
+        assert codes == [200, 200, 429]
+        assert client.post('/api/chat', json={'employee_id': eid, 'session_id': 'rl', 'message': 'hi'}, headers={'X-Forwarded-For': '203.0.113.10'}).status_code == 200
+    finally:
+        api.rb.settings.update({k: v for k, v in saved.items() if v is not None}); api._prompt_log.clear()
+        api.db.delete_conversation(eid, 'rl')

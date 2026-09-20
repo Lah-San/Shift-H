@@ -44,7 +44,7 @@ function explain(d) {
 async function chatStream(employeeId, sessionId, message, onStatus) {
   const s = session.get();
   const r = await fetch('/api/chat/stream', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Auth-Token': s ? s.token : '' }, body: JSON.stringify({ employee_id: employeeId, session_id: sessionId, message }) });
-  if (!r.ok) throw new Error(r.statusText);
+  if (!r.ok) { let d = ''; try { d = (await r.json()).detail; } catch (e) { } throw new Error(d || r.statusText); }
   const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = ''; let result = null;
   while (true) {
     const { value, done } = await reader.read(); if (done) break;
