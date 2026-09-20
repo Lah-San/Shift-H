@@ -1,5 +1,44 @@
 # Deploying Shift-H
 
+## Google Cloud Run (current hosting)
+
+Project `shift-h-demo-260920`, service `shift-h`, region `australia-southeast1` (Sydney). Cloud Build builds the `Dockerfile`; the
+service runs with 2 GB memory, 1 vCPU, scales to zero when idle (free tier) and up to 2 instances.
+
+Secrets live in Secret Manager (`gemini-api-key`, `admin-password`, `manager-password`, `staff-password`) and are injected as
+environment variables at run time. The local `.env` holds the same values and is git-ignored.
+
+### Redeploy after a change (from this folder)
+
+```bash
+gcloud config set project shift-h-demo-260920
+gcloud run deploy shift-h --source . --region australia-southeast1 --quiet
+```
+
+### Before a demo slot: keep one instance warm (no cold start), then back to zero
+
+```bash
+gcloud run services update shift-h --region australia-southeast1 --min-instances 1
+gcloud run services update shift-h --region australia-southeast1 --min-instances 0
+```
+
+### Rotate a secret (e.g. a new Gemini key) and restart
+
+```bash
+echo -n NEW_VALUE | gcloud secrets versions add gemini-api-key --data-file=-
+gcloud run services update shift-h --region australia-southeast1 --update-secrets GEMINI_API_KEY=gemini-api-key:latest
+```
+
+### Logs and URL
+
+```bash
+gcloud run services describe shift-h --region australia-southeast1 --format="value(status.url)"
+gcloud run services logs read shift-h --region australia-southeast1 --limit 50
+```
+
+The request database is inside the container: it resets when a new instance starts. Fine for a demo (clean inbox); mount a
+Cloud Storage bucket on `/tmp/shift-h` if persistence is ever needed.
+
 ## Hugging Face Spaces (free, no card)
 
 A Docker Space builds the `Dockerfile` in this repository and serves it on an HTTPS URL. Free hardware is 2 vCPU and 16 GB RAM, more than the 1.3 GB the app needs.
