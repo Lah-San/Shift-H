@@ -1,0 +1,99 @@
+{
+  "scenarios_total": 11912,
+  "employees": 4836,
+  "by_leave_family": [
+    {
+      "leave_family": "ANNUAL",
+      "count": 6777
+    },
+    {
+      "leave_family": "PUBLIC_HOLIDAY_TOIL",
+      "count": 1617
+    },
+    {
+      "leave_family": "LONG_SERVICE",
+      "count": 1270
+    },
+    {
+      "leave_family": "PROF_DEV_STUDY",
+      "count": 959
+    },
+    {
+      "leave_family": "ADO_TOIL_ONCALL",
+      "count": 451
+    },
+    {
+      "leave_family": "UNPAID",
+      "count": 383
+    },
+    {
+      "leave_family": "OTHER",
+      "count": 202
+    },
+    {
+      "leave_family": "PARENTAL",
+      "count": 180
+    },
+    {
+      "leave_family": "PERSONAL_SICK",
+      "count": 73
+    }
+  ],
+  "by_role_class": [
+    {
+      "role_class": "NURSE_RN",
+      "count": 3539
+    },
+    {
+      "role_class": "NURSE_SENIOR",
+      "count": 2326
+    },
+    {
+      "role_class": "ALLIED_PROF",
+      "count": 1936
+    },
+    {
+      "role_class": "MED_SENIOR",
+      "count": 1010
+    },
+    {
+      "role_class": "SUPPORT_OTHER",
+      "count": 818
+    },
+    {
+      "role_class": "MED_REGISTRAR",
+      "count": 803
+    },
+    {
+      "role_class": "NURSE_EN",
+      "count": 601
+    },
+    {
+      "role_class": "MED_JUNIOR",
+      "count": 547
+    },
+    {
+      "role_class": "NURSE_AIN",
+      "count": 332
+    }
+  ],
+  "with_rostered_shifts_inside_leave": 3303,
+  "starting_inside_roster_window": 3263,
+  "starting_after_2026_09_19": 10442,
+  "starting_after_today_and_inside_window_with_shifts": 1957,
+  "calendar_days_quantiles": {
+    "0.25": 2.0,
+    "0.5": 6.0,
+    "0.75": 14.0,
+    "0.9": 28.0
+  },
+  "excess_flag_rate_annual": 0.14061096136567836,
+  "contract_ends_before_leave_ends": 1976,
+  "lead_days_quantiles_for_future": {
+    "0.1": 16.0,
+    "0.25": 33.0,
+    "0.5": 74.0,
+    "0.75": 121.0,
+    "0.9": 202.0
+  }
+}

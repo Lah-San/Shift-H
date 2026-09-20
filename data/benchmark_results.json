@@ -1,0 +1,43 @@
+{
+  "scenarios": 10442,
+  "total_seconds": 24.26,
+  "per_scenario_ms": {
+    "mean": 2.31,
+    "p50": 0.5,
+    "p95": 8.7,
+    "max": 491.42
+  },
+  "outcomes": {
+    "NEEDS_APPROVAL": 3506,
+    "RECOMMEND_APPROVE": 4222,
+    "DECLINED": 2663,
+    "ACCEPTED": 51
+  },
+  "rule_hits": {
+    "BAL-001": 2195,
+    "ELG-001": 1867,
+    "COV-001": 1700,
+    "BAL-003": 822,
+    "ELG-003": 618,
+    "NOT-001": 571,
+    "NOT-004": 347,
+    "COV-002": 335,
+    "NOT-002": 334,
+    "REQ-004": 215,
+    "ELG-002": 193,
+    "COV-003": 63,
+    "COV-005": 14
+  },
+  "cover_by_tier": {
+    "ordinary": 15642,
+    "redeploy": 488,
+    "overtime": 157,
+    "casual": 317
+  },
+  "shifts_total": 78352,
+  "shifts_covered": 16604,
+  "shifts_uncovered": 6987,
+  "shifts_not_needed": 54761,
+  "rules_version": "1.0",
+  "run_at": "2026-09-20T00:12:00"
+}

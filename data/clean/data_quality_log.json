@@ -1,0 +1,46 @@
+{
+  "employees_raw_rows": 10596,
+  "employees_exact_duplicate_rows_removed": 664,
+  "employees_unique_ids": 9574,
+  "employees_null_job_type": 2,
+  "rosters_raw_rows": 551018,
+  "rosters_work_codes_with_trailing_space": 455016,
+  "rosters_malformed_meal_break": 7002,
+  "rosters_rows_same_employee_day_multi": 48808,
+  "rosters_rest_gap_under_10h": 51533,
+  "rosters_overlapping_shifts": 3088,
+  "rosters_paid_hours_gt_14": 4155,
+  "leave_raw_rows": 346216,
+  "leave_exact_duplicate_rows_removed": 44538,
+  "leave_quality_flags": [
+    {
+      "quality_flag": "OK",
+      "count": 297214
+    },
+    {
+      "quality_flag": "NONPOSITIVE_HOURS",
+      "count": 3458
+    },
+    {
+      "quality_flag": "HOURS_EXCEED_DAYS",
+      "count": 961
+    },
+    {
+      "quality_flag": "OVER_400_DAYS",
+      "count": 25
+    },
+    {
+      "quality_flag": "DATE_BEFORE_2023",
+      "count": 19
+    },
+    {
+      "quality_flag": "END_BEFORE_START",
+      "count": 1
+    }
+  ],
+  "leave_days_rows": 1050963,
+  "balances_raw_rows": 37551,
+  "balances_implausible_anniversary": 6,
+  "balances_identity_violations_untaken_minus_booked_ne_remaining": 2418,
+  "seconds": 1.0
+}

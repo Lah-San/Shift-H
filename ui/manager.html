@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift-H · Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@500&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span id="brand-sub">WA Health · Manager</span></div></div>
+  <div class="who"><span id="who"></span><a class="link" href="/">Staff app</a><button class="link" id="signout">Sign out</button></div>
+</header>
+<div class="shell">
+  <nav class="sidenav">
+    <h4>Manage</h4>
+    <button data-screen="inbox">Inbox <span class="count" id="n-inbox">0</span></button>
+    <button data-screen="coverage">Ward coverage</button>
+    <button data-screen="simulate">Ward simulator</button>
+    <button data-screen="fairness">Fairness</button>
+    <button data-screen="notes">Notifications <span class="count" id="n-notes" hidden>0</span></button>
+    <div class="group" data-role="admin" hidden>
+      <h4 style="margin-top:14px">Policy</h4>
+      <button data-screen="rules">Rules <span class="count" id="n-rules"></span></button>
+      <button data-screen="agreements">Agreement conditions</button>
+      <button data-screen="tiers">Cover options</button>
+      <button data-screen="update">Update from a document</button>
+      <h4 style="margin-top:14px">Governance</h4>
+      <button data-screen="history">Change history</button>
+      <button data-screen="quality">Engine quality</button>
+    </div>
+    <div class="foot" id="foot-note">Every recommendation is logged. Declines need written reasons (ANF cl.33).<br><br><span id="calib"></span></div>
+  </nav>
+
+  <main id="s-inbox" class="screen">
+    <div class="screen-head"><div><h1>Inbox</h1><p>Every request waiting for you. Escalations first, then staff with excess leave, then oldest (or switch to newest).</p></div><div style="display:flex;gap:8px;align-items:center"><input id="inbox-q" placeholder="Find by request ID, staff number or ward" style="width:280px"><select id="inbox-sort"><option value="priority">Priority order</option><option value="newest">Newest first</option></select><button class="btn sm" id="refresh">Refresh</button></div></div>
+    <div class="grid-list">
+      <div class="card"><div class="list" id="inbox"></div></div>
+      <div class="card" id="detail"><div class="empty">Select a request to see the recommendation.</div></div>
+    </div>
+  </main>
+
+  <main id="s-coverage" class="screen">
+    <div class="screen-head"><div><h1>Ward coverage</h1><p>Staff on shift against the requirement for the next four weeks. Dashed cells are partly forecast: not every roster for that date is published yet, so usual patterns fill the rest.</p></div></div>
+    <div class="card">
+      <div class="card-h"><div style="display:flex;gap:10px;align-items:center"><select id="unit" style="width:360px"></select><button class="btn sm primary" id="cov-go">Show</button></div><span class="legend"><span><i style="background:#E6F4EC"></i>at requirement</span><span><i style="background:#FFF4D6"></i>1 short</span><span><i style="background:#FDECEC"></i>2+ short</span></span></div>
+      <div class="card-b"><div id="heat" class="heat"></div><div id="tips" class="section"></div></div>
+    </div>
+  </main>
+
+  <main id="s-simulate" class="screen">
+    <div class="screen-head"><div><h1>Ward simulator</h1><p>What if these people were away? Uses the real roster and the same rules; nothing is saved.</p></div></div>
+    <div class="grid-list">
+      <div class="card">
+        <div class="card-h"><h2>Scenario</h2></div>
+        <div class="card-b">
+          <div class="field"><label>Ward</label><select id="sim-unit"></select></div>
+          <div class="form-row"><div class="field"><label>From</label><input type="date" id="sim-start"></div><div class="field"><label>To</label><input type="date" id="sim-end"></div></div>
+          <h4>Absences to simulate</h4>
+          <div id="sim-rows"></div>
+          <div style="margin:8px 0 14px"><button class="btn sm" id="sim-add">Add a person</button></div>
+          <button class="btn primary" id="sim-go">Run simulation</button>
+          <p class="progress" id="sim-status"></p>
+        </div>
+      </div>
+      <div class="card" id="sim-out"><div class="empty">Choose a ward, add one or more absences, then run.</div></div>
+    </div>
+  </main>
+
+  <main id="s-fairness" class="screen">
+    <div class="screen-head"><div><h1>Fairness</h1><p>Who has been asked to take extra shifts. Protected attributes are never used in ranking.</p></div></div>
+    <div class="card"><div class="card-b" id="equity"></div></div>
+  </main>
+
+  <main id="s-update" class="screen">
+    <div class="screen-head"><div><h1>Update from a document</h1><p>Upload a new award, agreement or WA Health policy. The AI reads it, compares every value with the rulebook and lists what should change, with the clause as evidence.</p></div></div>
+    <div class="card"><div class="card-b">
+      <div class="upload"><b>Choose a PDF, DOCX or TXT</b><input type="file" id="d-file" accept=".pdf,.docx,.txt,.md"><div style="margin-top:12px"><button class="btn primary" id="d-go">Find changes</button></div><div class="progress" id="d-status"></div></div>
+      <div id="d-out" class="section"></div>
+    </div></div>
+  </main>
+  <main id="s-rules" class="screen">
+    <div class="screen-head"><div><h1>Rules</h1><p>Select a rule to see its policy source and propose a change.</p></div><input id="filter" placeholder="Filter by code, name or category" style="width:280px"></div>
+    <div class="card"><div id="rules"></div></div>
+  </main>
+  <main id="s-agreements" class="screen">
+    <div class="screen-head"><div><h1>Agreement conditions</h1><p>Hours, rest, notice and leave figures per industrial agreement. Each family drives its own checks.</p></div><select id="fam" style="width:320px"></select></div>
+    <div class="card"><div id="agree"></div></div>
+  </main>
+  <main id="s-tiers" class="screen">
+    <div class="screen-head"><div><h1>Cover options</h1><p>The order in which cover is tried. Switch an option off to remove it from every recommendation.</p></div></div>
+    <div class="card"><div id="tiers"></div></div>
+  </main>
+  <main id="s-quality" class="screen">
+    <div class="screen-head"><div><h1>Engine quality</h1><p>How the engine was tested: known-answer cases, agreement with leave the organisation actually booked, speed, and the automated test suite.</p></div></div>
+    <div id="quality"></div>
+  </main>
+  <main id="s-history" class="screen">
+    <div class="screen-head"><div><h1>Change history</h1><p>Every proposal, the document behind it, the AI verdict and what was applied.</p></div></div>
+    <div class="card"><div id="hist"></div></div>
+  </main>
+  <main id="s-notes" class="screen">
+    <div class="screen-head"><div><h1>Notifications</h1><p>Everything the engine has told you: new requests, urgent leave, declined cover. This is the manager's in-app inbox; there is no email in the demo.</p></div></div>
+    <div class="card"><div class="list" id="notes"></div></div>
+  </main>
+</div>
+<!-- change drawer -->
+<aside id="drawer" class="drawer hidden">
+  <div class="card-h"><h2 id="m-title">Propose a change</h2><button class="link" id="m-close">Close</button></div>
+  <div class="card-b">
+    <div id="m-context" class="small muted" style="margin-bottom:10px"></div>
+    <div class="diff" id="m-diff"></div>
+    <div class="field" style="margin-top:14px"><label for="m-why">Why is this change needed?</label><textarea id="m-why" rows="2" placeholder="e.g. clause 28(12) of the 2027 agreement sets 10 hours"></textarea></div>
+    <div class="field"><label for="m-file">Australian policy, award or agreement that supports it</label><input type="file" id="m-file" accept=".pdf,.docx,.txt,.md"></div>
+    <button class="btn primary" id="m-verify">Verify with AI</button>
+    <p class="progress" id="m-status"></p>
+    <div id="m-review" class="hidden"></div>
+  </div>
+</aside>
+<div id="toast" class="toast hidden"></div>
+<script src="/static/common.js"></script>
+<script src="/static/manager.js"></script>
+<script src="/static/rules.js"></script>
+<script src="/static/console.js"></script>
+</body>
+</html>

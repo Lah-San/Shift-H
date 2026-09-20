@@ -1,0 +1,843 @@
+meta:
+  version: '1.0'
+  updated: '2026-09-20'
+  organisation: WA Health (synthetic hackathon dataset)
+settings:
+  today: '2026-09-19'
+  roster_published_days: 28
+  peak_window_start: '2026-07-13'
+  peak_window_end: '2026-09-13'
+  baseline_percentile: 0.1
+  required_fraction: 1.0
+  min_observations_for_baseline: 4
+  forecast_beyond_roster: true
+  pattern_min_probability: 0.5
+  pay_period_anchor: '2026-05-18'
+  alternatives_search_before_days: 28
+  alternatives_search_after_days: 56
+  alternatives_max: 3
+  auto_approve_when_fully_covered: false
+  auto_accept_sick_leave: true
+  cover_recommendations_for_sick_leave: true
+  extra_shift_lookback_days: 28
+  fallback_hours_per_weekday_divisor: 10
+cover_matrix:
+  NURSE_SENIOR:
+  - NURSE_SENIOR
+  NURSE_RN:
+  - NURSE_RN
+  - NURSE_SENIOR
+  NURSE_EN:
+  - NURSE_EN
+  - NURSE_RN
+  - NURSE_SENIOR
+  NURSE_AIN:
+  - NURSE_AIN
+  - NURSE_EN
+  - NURSE_RN
+  - NURSE_SENIOR
+  MED_SENIOR:
+  - MED_SENIOR
+  MED_REGISTRAR:
+  - MED_REGISTRAR
+  - MED_SENIOR
+  MED_JUNIOR:
+  - MED_JUNIOR
+  - MED_REGISTRAR
+  ALLIED_PROF:
+  - ALLIED_PROF
+  SUPPORT_OTHER:
+  - SUPPORT_OTHER
+same_position_required_for:
+- ALLIED_PROF
+- SUPPORT_OTHER
+- MED_SENIOR
+ratio_direct_care_roles:
+- NURSE_RN
+- NURSE_EN
+- NURSE_SENIOR
+cover_tiers:
+- id: ordinary
+  enabled: true
+  label: Extra hours for a part-time colleague at ordinary pay
+  cost_multiplier: 1.0
+  requires_manager: false
+- id: redeploy
+  enabled: true
+  label: Move a spare colleague from another ward (ordinary pay)
+  cost_multiplier: 1.0
+  requires_manager: false
+- id: casual
+  enabled: true
+  label: Casual pool (25% loading)
+  cost_multiplier: 1.25
+  requires_manager: false
+- id: overtime
+  enabled: true
+  label: Overtime (must be authorised)
+  cost_multiplier: 1.75
+  requires_manager: true
+- id: agency
+  enabled: false
+  label: Agency (last resort, ANF cl.16(2))
+  cost_multiplier: 2.2
+  requires_manager: true
+ranking:
+  tier_weight: 100
+  primary_unit_bonus: 30
+  worked_in_unit_bonus: 15
+  same_position_bonus: 10
+  exact_role_bonus: 10
+  graduate_penalty: 8
+  equity_penalty_per_extra_shift: 6
+  fixed_term_penalty: 2
+  hours_headroom_weight: 0.2
+agreements:
+  ANF:
+    label: ANF nurses & midwives 2024
+    fte_hours_fortnight: 76
+    annual_leave_hours_year: 152
+    shift_worker_extra_hours_year: 38
+    personal_leave_hours_year: 114
+    lsl_notice_days_employee: 56
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 9.5
+    night_day_changeover_hours: 20
+    max_shift_hours: 12
+    max_consecutive_duties: 7
+    max_duties_fortnight: 10
+    max_consecutive_nights: 5
+    max_nights_fortnight: 8
+    min_days_off_week: 2
+    casual_min_hours: 2
+    casual_loading: 0.25
+    overtime_first_hours: 3
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 10
+  UWU_EN_AIN:
+    label: UWU enrolled nurses & AINs 2024
+    fte_hours_fortnight: 76
+    annual_leave_hours_year: 266
+    shift_worker_extra_hours_year: 0
+    personal_leave_hours_year: 114
+    lsl_notice_days_employee: 56
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 9.5
+    night_day_changeover_hours: 20
+    max_shift_hours: 12
+    max_consecutive_duties: 6
+    max_duties_fortnight: 10
+    max_consecutive_nights: 5
+    max_nights_fortnight: 8
+    min_days_off_week: 2
+    casual_min_hours: 2
+    casual_loading: 0.25
+    overtime_first_hours: 2
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 14
+  HSUWA:
+    label: HSUWA PACTS allied health 2024
+    fte_hours_fortnight: 76
+    annual_leave_hours_year: 178.6
+    shift_worker_extra_hours_year: 38
+    personal_leave_hours_year: 114
+    lsl_notice_days_employee: 28
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 10
+    night_day_changeover_hours: 10
+    max_shift_hours: 12
+    max_consecutive_duties: 6
+    max_duties_fortnight: 10
+    max_consecutive_nights: 5
+    max_nights_fortnight: 8
+    min_days_off_week: 2
+    casual_min_hours: 3
+    casual_loading: 0.25
+    overtime_first_hours: 3
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 8
+  AMA:
+    label: AMA medical practitioners 2024
+    fte_hours_fortnight: 80
+    annual_leave_hours_year: 160
+    shift_worker_extra_hours_year: 40
+    personal_leave_hours_year: 80
+    lsl_notice_days_employee: 90
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 10
+    night_day_changeover_hours: 10
+    max_shift_hours: 14
+    max_consecutive_duties: 12
+    max_duties_fortnight: 12
+    max_consecutive_nights: 4
+    max_nights_fortnight: 8
+    min_days_off_week: 1
+    max_hours_7_days: 75
+    max_hours_14_days: 140
+    casual_min_hours: 3
+    casual_loading: 0.25
+    overtime_first_hours: 3
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 8
+    no_night_before_leave: true
+  UWU_HSW:
+    label: UWU hospital support workers 2024
+    fte_hours_fortnight: 76
+    annual_leave_hours_year: 152
+    shift_worker_extra_hours_year: 38
+    personal_leave_hours_year: 114
+    lsl_notice_days_employee: 28
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 10
+    night_day_changeover_hours: 10
+    max_shift_hours: 12
+    max_consecutive_duties: 6
+    max_duties_fortnight: 10
+    max_consecutive_nights: 5
+    max_nights_fortnight: 8
+    min_days_off_week: 2
+    casual_min_hours: 2
+    casual_loading: 0.25
+    overtime_first_hours: 2
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 8
+  OTHER:
+    label: Other / award free
+    fte_hours_fortnight: 76
+    annual_leave_hours_year: 152
+    shift_worker_extra_hours_year: 0
+    personal_leave_hours_year: 76
+    lsl_notice_days_employee: 28
+    annual_notice_days: 14
+    response_days: 14
+    evidence_after_days: 2
+    min_break_hours: 10
+    night_day_changeover_hours: 10
+    max_shift_hours: 12
+    max_consecutive_duties: 6
+    max_duties_fortnight: 10
+    max_consecutive_nights: 5
+    max_nights_fortnight: 8
+    min_days_off_week: 2
+    casual_min_hours: 2
+    casual_loading: 0.25
+    overtime_first_hours: 3
+    overtime_rate_first: 1.5
+    overtime_rate_after: 2.0
+    sunday_rate: 2.0
+    public_holiday_rate: 2.5
+    excess_leave_direct_weeks: 8
+leave_types:
+  ANNUAL:
+    label: Annual leave
+    balance_code: AL
+    paid: true
+    casual_allowed: false
+    urgent: false
+    max_days: 84
+  LONG_SERVICE:
+    label: Long service leave
+    balance_code: LS
+    paid: true
+    casual_allowed: true
+    urgent: false
+    max_days: 182
+    min_days: 1
+  SICK:
+    label: Sick leave (personal)
+    balance_code:
+    - PE
+    - SF
+    - PN
+    paid: true
+    casual_allowed: false
+    urgent: true
+  CARER:
+    label: Carer's leave
+    balance_code:
+    - PE
+    - SF
+    - PN
+    paid: true
+    casual_allowed: false
+    urgent: true
+  COMPASSIONATE:
+    label: Compassionate leave
+    balance_code: null
+    paid: true
+    casual_allowed: true
+    urgent: true
+    max_days: 3
+  PROF_DEV:
+    label: Professional development
+    balance_code:
+    - PC
+    - PD
+    - OS
+    paid: true
+    casual_allowed: false
+    urgent: false
+    notice_days: 28
+  STUDY:
+    label: Study / conference leave
+    balance_code:
+    - PD
+    - PC
+    - OS
+    paid: true
+    casual_allowed: false
+    urgent: false
+    notice_days: 28
+  ADO:
+    label: Accrued day off (ADO)
+    balance_code: AD
+    paid: true
+    casual_allowed: false
+    urgent: false
+    max_days: 2
+  TOIL:
+    label: Time off in lieu
+    balance_code:
+    - TP
+    - TO
+    paid: true
+    casual_allowed: false
+    urgent: false
+  PURCHASED:
+    label: Purchased leave (42/52)
+    balance_code: PU
+    paid: true
+    casual_allowed: false
+    urgent: false
+    notice_days: 28
+  PARENTAL:
+    label: Parental leave
+    balance_code: null
+    paid: true
+    casual_allowed: false
+    urgent: false
+    notice_days: 70
+  CULTURAL:
+    label: Cultural / ceremonial leave
+    balance_code: null
+    paid: true
+    casual_allowed: true
+    urgent: false
+    max_days: 5
+  UNPAID:
+    label: Leave without pay
+    balance_code: null
+    paid: false
+    casual_allowed: true
+    urgent: false
+    notice_days: 14
+staffing_overrides: {}
+ratio_wards: {}
+ratio_definitions:
+  MED_SURG:
+    AM:
+      ratio: 4
+      hfsc: 1
+    PM:
+      ratio: 4
+      hfsc: 1
+    NIGHT:
+      ratio: 7
+      hfsc: 0
+    LONG_DAY:
+      ratio: 4
+      hfsc: 1
+  CORONARY:
+    AM:
+      ratio: 2
+      hfsc: 1
+    PM:
+      ratio: 2
+      hfsc: 1
+    NIGHT:
+      ratio: 3
+      hfsc: 1
+    LONG_DAY:
+      ratio: 2
+      hfsc: 1
+  CRITICAL:
+    AM:
+      ratio: 1
+      hfsc: 1
+    PM:
+      ratio: 1
+      hfsc: 1
+    NIGHT:
+      ratio: 1
+      hfsc: 1
+    LONG_DAY:
+      ratio: 1
+      hfsc: 1
+rules:
+- id: REQ-001
+  name: Dates must be valid
+  category: request
+  enabled: true
+  severity: hard
+  locked: true
+  params: {}
+  source: System
+  description: End date must be on or after the start date.
+  public: The end date is before the start date.
+  manager: Invalid date range.
+  policy_backed: false
+- id: REQ-002
+  name: Leave type recognised
+  category: request
+  enabled: true
+  severity: hard
+  locked: true
+  params: {}
+  source: System
+  public: That leave type is not available.
+  manager: Unknown leave type.
+  policy_backed: false
+- id: REQ-003
+  name: No back-dated planned leave
+  category: request
+  enabled: true
+  severity: hard
+  params:
+    backdate_days_allowed_for_urgent: 3
+  source: MP 0100/18 s3.3 (timely applications)
+  description: Planned leave cannot start in the past. Sick/carer's leave may be back-dated up to N days.
+  public: Planned leave cannot start in the past. Sick or carer's leave can be recorded for the last {backdate_days_allowed_for_urgent}
+    days.
+  manager: Start date is before today.
+  policy_backed: true
+- id: REQ-004
+  name: Maximum single block length
+  category: request
+  enabled: true
+  severity: soft
+  params: {}
+  source: 'ANF cl.33(16): blocks; local practice'
+  description: Blocks longer than the leave type's maximum go to the manager.
+  public: A single block this long needs manager approval.
+  manager: Block exceeds the usual maximum for this leave type.
+  policy_backed: true
+- id: ELG-001
+  name: Contract must cover the leave dates
+  category: eligibility
+  enabled: true
+  severity: soft
+  params: {}
+  source: Employee contract (Position Entry End Date)
+  description: Fixed-term contracts are often renewed, so this goes to the manager to confirm rather than blocking.
+  public: Your current contract ends before these dates, so a manager needs to confirm the contract will continue.
+  manager: Fixed-term contract ends {contract_end}, before the leave ends. Confirm renewal before approving.
+  policy_backed: true
+- id: ELG-002
+  name: Casual staff cannot take paid leave types
+  category: eligibility
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.14 / HSUWA cl.13 (casual loading in lieu of paid leave)
+  public: As a casual employee this paid leave type is not available. You can record unavailability or leave without pay instead.
+  manager: Casual employee requested a paid leave type.
+  policy_backed: true
+- id: ELG-003
+  name: Long service leave needs 7 years' service
+  category: eligibility
+  enabled: true
+  severity: hard
+  params:
+    min_years: 7
+  source: ANF cl.35(1); AMA cl.38; HSUWA cl.47
+  public: Long service leave becomes available after {min_years} years of service.
+  manager: Service is below {min_years} years.
+  policy_backed: true
+- id: BAL-001
+  name: Enough leave balance at the start date
+  category: balance
+  enabled: true
+  severity: hard
+  params:
+    allow_negative_hours: 0
+  source: Leave Balances; accrual per agreement
+  description: Projected balance = current balance + accrual until the start date. Requested hours = your rostered hours inside
+    the dates.
+  public: Your projected balance ({projected_hours} h) is less than the {requested_hours} h these dates would use.
+  manager: Projected balance {projected_hours} h < requested {requested_hours} h.
+  policy_backed: true
+- id: BAL-002
+  name: Excess leave gets priority
+  category: balance
+  enabled: true
+  severity: info
+  params:
+    entitlements_threshold: 2.0
+  source: MP 0100/18 s3, s7 (Excess Leave = more than two accrued entitlements)
+  description: Staff above two years' entitlement are encouraged to take leave and win ties for the same dates.
+  public: You hold more than two years of annual leave. Taking leave now is encouraged and this request is given priority.
+  manager: Employee has Excess Leave ({balance_hours} h > {threshold_hours} h). An Employee Leave Management Plan is required
+    (MP 0100/18 s3.2).
+  policy_backed: true
+- id: BAL-003
+  name: Unknown balance policy
+  category: balance
+  enabled: true
+  severity: soft
+  params: {}
+  source: Local
+  description: If no balance record exists for the leave type, the request goes to the manager instead of being blocked.
+  public: We could not find a balance for this leave type, so a manager will confirm it.
+  manager: No balance record for {balance_code}.
+  policy_backed: false
+- id: NOT-001
+  name: Minimum notice for planned leave
+  category: notice
+  enabled: true
+  severity: soft
+  params: {}
+  source: MP 0100/18 s3.3 (sufficient notice); roster posted 28 days ahead (ANF cl.28(18))
+  description: Planned leave with less than the agreement's notice period goes to the manager.
+  public: You are giving {lead_days} days' notice and {notice_days} are normally needed, so a manager needs to confirm it.
+  manager: Only {lead_days} days' notice (minimum {notice_days}).
+  policy_backed: true
+- id: NOT-002
+  name: Long service leave notice
+  category: notice
+  enabled: true
+  severity: soft
+  params: {}
+  source: ANF cl.35 (8 weeks); AMA cl.38 (3 months); HSUWA cl.47
+  public: You are giving {lead_days} days' notice; long service leave normally needs {notice_days}, so a manager will confirm.
+  manager: LSL notice {lead_days} days (minimum {notice_days}).
+  policy_backed: true
+- id: NOT-003
+  name: Leave inside the posted roster
+  category: notice
+  enabled: true
+  severity: info
+  params: {}
+  source: ANF cl.28(18)-(19)
+  description: Leave that starts inside the published roster means a roster alteration.
+  public: Your roster is already published for {known_days} of these {days} days, so those shifts will be re-arranged.
+  manager: Roster alteration required (inside the {published_days}-day published window).
+  policy_backed: true
+- id: NOT-004
+  name: Professional development / purchased / parental notice
+  category: notice
+  enabled: true
+  severity: soft
+  params: {}
+  source: ANF cl.55; Purchased Leave Guidelines; parental leave provisions
+  public: This leave type normally needs {notice_days} days' notice, so a manager will confirm.
+  manager: Notice {lead_days} days (minimum {notice_days}).
+  policy_backed: true
+- id: BLK-001
+  name: Nurses' leave above 10 weeks is employer-scheduled
+  category: block
+  enabled: true
+  severity: info
+  params: {}
+  source: ANF cl.33(20)-(21)
+  public: Because your annual leave balance is above 10 weeks, your employer may schedule some of it in blocks of five days
+    or more.
+  manager: 'Balance above {weeks} weeks: employer may direct leave in 5-day blocks (unless a request was refused in the last
+    12 months).'
+  policy_backed: true
+- id: COV-001
+  name: Ward must stay at its required staffing on every shift
+  category: coverage
+  enabled: true
+  severity: hard
+  locked: false
+  params: {}
+  source: MP 0187/24 s3.2.1, s3.4.1; NHpPD profile; ANF cl.16(1)(f)
+  description: 'Each of your rostered shifts is checked: after you leave, does the ward still have the required number of
+    staff in your role? If not, cover is searched for.'
+  public: '{gap_shifts} of your {total_shifts} rostered shifts would leave the ward below its required staffing and no cover
+    could be found.'
+  manager: '{gap_shifts}/{total_shifts} shifts below requirement without cover.'
+  policy_backed: true
+- id: COV-002
+  name: Limit on how many of a team can be away at once
+  category: coverage
+  enabled: true
+  severity: soft
+  params:
+    max_fraction_on_leave: 0.34
+    min_team_size: 6
+  source: WACHS Roster Guideline s2.4 (number of FTE on leave at any one time); MP 0100/18 s3.4
+  public: More than {pct}% of your team would be away on {days} of the days requested, so a manager needs to decide.
+  manager: Team-away share exceeds {pct}% on {days} day(s).
+  policy_backed: true
+- id: COV-003
+  name: Cover that needs overtime requires authorisation
+  category: coverage
+  enabled: true
+  severity: soft
+  params: {}
+  source: ANF cl.30(1); WACHS Fatigue Management Policy
+  public: Cover is possible, but only with overtime, which a manager must authorise.
+  manager: '{overtime_shifts} shift(s) can only be covered with authorised overtime.'
+  policy_backed: true
+- id: COV-004
+  name: Absences of two weeks or less are not backfilled unless the ward would fall short
+  category: coverage
+  enabled: true
+  severity: info
+  params:
+    days: 14
+  source: MP 0100/18 s3.4; AMA cl.34(14)
+  description: Short absences only trigger cover when the ward would actually fall below its requirement.
+  public: Short absences are only backfilled where the ward would otherwise fall short.
+  manager: 'Absence <= {days} days: backfill only where required.'
+  policy_backed: true
+- id: COV-005
+  name: No more than half a medical department on professional development leave
+  category: coverage
+  enabled: true
+  severity: soft
+  params:
+    max_fraction: 0.5
+  source: AMA Agreement 2024 (senior practitioners' PDL)
+  public: Too many colleagues from your department would be on professional development leave at the same time.
+  manager: Department PDL share exceeds {pct}%.
+  policy_backed: true
+- id: COV-006
+  name: Donor ward must stay at requirement when a colleague is moved
+  category: coverage
+  enabled: true
+  severity: hard
+  locked: false
+  params: {}
+  source: MP 0187/24 Non-Compliance Form (staff balanced to another area)
+  description: Never fix one ward by breaking another.
+  public: ''
+  manager: 'Redeployment rejected: donor ward would fall below requirement.'
+  policy_backed: true
+- id: COV-007
+  name: Buffer for unplanned absence
+  category: coverage
+  enabled: true
+  severity: info
+  locked: false
+  params:
+    min_expected_absences: 0.5
+  source: WACHS Roster Guideline s2.4; historical personal leave rate in the roster data
+  description: Wards run a typical rate of same-day sick calls. When your absence would leave fewer spare staff than that
+    rate, the manager is told so they can plan a buffer.
+  public: '{shifts} of your shifts would leave the ward with no spare staff for the usual rate of sick calls; your manager
+    is told so they can plan a buffer.'
+  manager: '{shifts} shift(s) would have no buffer for unplanned absence (about {expected} sick call(s) expected per shift
+    from the ward''s history).'
+  policy_backed: true
+- id: FAT-001
+  name: Minimum rest between shifts
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(12), cl.30(4); HSUWA cl.17; AMA cl.12
+  manager: Candidate would have less than {hours} h rest.
+  policy_backed: true
+- id: FAT-002
+  name: Rest when changing between night and day duty
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(11)
+  manager: Night-to-day changeover needs {hours} h free.
+  policy_backed: true
+- id: FAT-003
+  name: Maximum consecutive duties
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(15); UWU cl.18; HSUWA cl.17; AMA cl.12
+  manager: Would exceed {max} consecutive duties.
+  policy_backed: true
+- id: FAT-004
+  name: Maximum duties per fortnight
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(15); HSUWA cl.16
+  manager: Would exceed {max} duties in the pay fortnight.
+  policy_backed: true
+- id: FAT-005
+  name: Night shift limits
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(15); AMA cl.12
+  manager: Would exceed night-shift limits ({max_consecutive} consecutive / {max_fortnight} per fortnight).
+  policy_backed: true
+- id: FAT-006
+  name: Minimum days off per week
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(14); UWU cl.18
+  manager: Would leave fewer than {min} full days off in the week.
+  policy_backed: true
+- id: FAT-007
+  name: Maximum shift length
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: ANF cl.28(10); HSUWA cl.16; AMA cl.12
+  manager: Shift longer than {max} h for this agreement.
+  policy_backed: true
+- id: FAT-008
+  name: Doctors in training hour caps
+  category: fatigue
+  enabled: true
+  severity: hard
+  params: {}
+  source: AMA Agreement 2024 Part 2 (75 h / 7 days, 140 h / 14 days)
+  manager: Would exceed {max7} h in 7 days or {max14} h in 14 days.
+  policy_backed: true
+- id: FAT-009
+  name: No night shift or on-call immediately before leave
+  category: fatigue
+  enabled: true
+  severity: info
+  params: {}
+  source: AMA (no night before approved leave); ANF cl.31(16) (no on-call the day before leave)
+  public: You are rostered on a night shift the day before your leave starts; the roster should be adjusted.
+  manager: Requester rostered on a night shift the day before leave.
+  policy_backed: true
+- id: FAT-010
+  name: Flag existing roster breaches
+  category: fatigue
+  enabled: true
+  severity: info
+  params: {}
+  source: WACHS Roster Guideline s4.1 (RoStar verification messages)
+  manager: Existing roster already breaches rest rules for this person around these dates.
+  policy_backed: true
+- id: SCK-001
+  name: Sick and carer's leave is accepted immediately
+  category: urgent
+  enabled: true
+  severity: info
+  locked: false
+  params: {}
+  source: 'ANF cl.38(20): reasonable and legitimate requests will be approved subject to credits'
+  description: Urgent leave is never refused on staffing grounds. The manager is notified and cover is recommended.
+  public: Your sick / carer's leave is recorded. Your manager has been notified and will arrange cover. Get well soon.
+  manager: Urgent leave accepted automatically; cover recommendations attached.
+  policy_backed: true
+- id: SCK-002
+  name: Evidence needed for longer sick leave
+  category: urgent
+  enabled: true
+  severity: info
+  params: {}
+  source: ANF cl.38; HSUWA cl.43; AMA cl.35 (evidence after two consecutive days)
+  public: Sick leave longer than {days} days needs a medical certificate.
+  manager: Evidence required (> {days} days).
+  policy_backed: true
+- id: PH-001
+  name: Public holidays inside the dates
+  category: calendar
+  enabled: true
+  severity: info
+  params: {}
+  source: WA public holidays; ANF cl.30(3) (2.5x on public holidays)
+  public: '{count} public holiday(s) fall inside these dates and are not deducted from your balance.'
+  manager: '{count} public holiday(s) inside the window: cover on those days costs 2.5x.'
+  policy_backed: true
+- id: HOR-001
+  name: Dates beyond the published roster
+  category: calendar
+  enabled: true
+  severity: info
+  params: {}
+  source: ANF cl.28(18)
+  description: For dates past the published roster, the check uses your usual working pattern and the ward's usual staffing.
+  public: Your roster is not published yet for {forecast_days} of these {days} days; those days are checked against your usual
+    pattern and confirmed when the roster is built.
+  manager: 'Forecast mode: evaluated on usual pattern; confirm at roster build.'
+  policy_backed: true
+- id: EQ-001
+  name: Share extra shifts fairly
+  category: equity
+  enabled: true
+  severity: info
+  params: {}
+  source: HSUWA cl.18.3(e) (offer vacant shifts equitably); ANF cl.11
+  manager: Candidates who already took extra shifts recently are ranked lower.
+  policy_backed: true
+- id: PRI-001
+  name: Competing requests for the same dates
+  category: equity
+  enabled: true
+  severity: info
+  params: {}
+  source: MP 0100/18 s3.2 (fairness and equity; excess leave)
+  manager: Ties are broken by excess leave first, then submission time.
+  policy_backed: true
+- id: GOV-001
+  name: A person makes the final decision
+  category: governance
+  enabled: true
+  severity: info
+  locked: true
+  params: {}
+  source: WA Health AI Standard s6.1, s8 P2; MP 0193/25
+  public: This is an AI-assisted recommendation. A manager makes the final decision and you can ask for a human review at
+    any time.
+  manager: Recommendation only. Approve, adjust or decline.
+  policy_backed: true
+- id: GOV-002
+  name: No protected attributes in recommendations
+  category: governance
+  enabled: true
+  severity: info
+  locked: true
+  params: {}
+  source: WA Health AI Standard s8 P3; Equal Opportunity Act 1984 (WA)
+  manager: Gender, age and other protected attributes are never used for ranking.
+  policy_backed: true
+- id: GOV-003
+  name: Every recommendation is logged
+  category: governance
+  enabled: true
+  severity: info
+  locked: true
+  params: {}
+  source: WA Health AI Standard s8 P8; State Records Act 2000
+  manager: Inputs, rules version and outcome are written to the audit log.
+  policy_backed: true

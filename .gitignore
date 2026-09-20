@@ -1,0 +1,23 @@
+# secrets and local state
+.env
+*.env
+data/*.db
+data/*.db-journal
+*.log
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# scratch patch scripts
+_patch_*.py
+_fix_*.py

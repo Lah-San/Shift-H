@@ -1,0 +1,158 @@
+{
+  "run_at": "2026-09-20T00:09:26",
+  "dataset_A_size": 3000,
+  "dataset_B_size": 68,
+  "grid": [
+    {
+      "baseline_percentile": 0.25,
+      "team_away_cap": 0.25,
+      "A_agreement": 0.9197,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "COV-002": 449,
+        "COV-001": 257,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187
+      },
+      "seconds": 11.3
+    },
+    {
+      "baseline_percentile": 0.25,
+      "team_away_cap": 0.34,
+      "A_agreement": 0.9477,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "COV-001": 257,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187,
+        "ELG-003": 149
+      },
+      "seconds": 13.3
+    },
+    {
+      "baseline_percentile": 0.25,
+      "team_away_cap": 0.5,
+      "A_agreement": 0.958,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "COV-001": 257,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187,
+        "ELG-003": 149
+      },
+      "seconds": 13.5
+    },
+    {
+      "baseline_percentile": 0.1,
+      "team_away_cap": 0.34,
+      "A_agreement": 0.9593,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187,
+        "COV-001": 174,
+        "ELG-003": 149
+      },
+      "seconds": 9.1
+    },
+    {
+      "baseline_percentile": 0.35,
+      "team_away_cap": 0.34,
+      "A_agreement": 0.9377,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "COV-001": 339,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187,
+        "ELG-003": 149
+      },
+      "seconds": 11.6
+    },
+    {
+      "baseline_percentile": 0.5,
+      "team_away_cap": 0.34,
+      "A_agreement": 0.9293,
+      "B_accuracy": 1.0,
+      "A_rule_hits": {
+        "BAL-001": 636,
+        "NOT-001": 571,
+        "COV-001": 415,
+        "NOT-004": 252,
+        "BAL-003": 250,
+        "NOT-002": 239,
+        "ELG-001": 187,
+        "ELG-003": 149
+      },
+      "seconds": 11.4
+    }
+  ],
+  "chosen": {
+    "baseline_percentile": 0.1,
+    "team_away_cap": 0.34,
+    "A_agreement": 0.9593
+  },
+  "A_disagreements": [
+    [
+      "BAL-001|COV-001",
+      22
+    ],
+    [
+      "BAL-001|COV-002",
+      18
+    ],
+    [
+      "COV-001",
+      14
+    ],
+    [
+      "BAL-001|NOT-001|COV-002",
+      6
+    ],
+    [
+      "ELG-003|BAL-001|NOT-002|COV-001",
+      6
+    ],
+    [
+      "BAL-001|NOT-002|COV-001",
+      5
+    ],
+    [
+      "BAL-001|NOT-001|COV-001",
+      5
+    ],
+    [
+      "ELG-003|BAL-001|NOT-002|COV-002",
+      3
+    ],
+    [
+      "NOT-001|COV-001",
+      3
+    ],
+    [
+      "BAL-001|NOT-004|COV-001",
+      3
+    ]
+  ],
+  "B_failures": [],
+  "applied": true
+}

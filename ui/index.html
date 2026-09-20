@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift-H</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@500&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- Sign in -->
+<div id="login" class="login-page">
+  <div class="login-card">
+    <div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span>WA Health · clinician leave and cover</span></div></div>
+    <p class="lead">Sign in to check dates, request leave and see how it will be covered.</p>
+    <form id="login-form">
+      <div class="field"><label for="l-user">Employee ID or account</label><input id="l-user" required value="SYN000009" autocomplete="username"></div>
+      <div class="field"><label for="l-pass">Password</label><input id="l-pass" type="password" required value="password" autocomplete="current-password"></div>
+      <p id="l-error" class="error hidden"></p>
+      <button class="btn primary block" type="submit">Sign in</button>
+    </form>
+    <p class="demo-note">Demo accounts. Staff: any staff number with password <b>password</b>. Manager: <b>manager / manager</b>. Super user: <b>admin / admin</b>. The session lives in this browser tab.</p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span>WA Health</span></div></div>
+    <div class="who"><span id="who"></span><span class="pill" id="who-role">Staff</span><button class="link" id="signout">Sign out</button></div>
+  </header>
+  <div class="shell">
+    <nav class="sidenav">
+      <h4>Leave</h4>
+      <button data-screen="request" class="active">Request leave</button>
+      <button data-screen="assistant">Ask the assistant</button>
+      <button data-screen="mine">My requests <span class="count" id="n-mine">0</span></button>
+      <button data-screen="cover">Cover requests <span class="count" id="n-cover">0</span></button>
+      <div class="foot">Rules and cover are checked by the Shift-H engine. A manager makes every final decision.</div>
+    </nav>
+
+    <!-- Request leave -->
+    <main id="s-request" class="screen active">
+      <div class="screen-head"><div><h1>Request leave</h1><p>Choose the type and dates. You get a straight answer, what happens to each of your shifts, and what to do next.</p></div></div>
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <div class="card-h"><h2>New request</h2></div>
+            <div class="card-b">
+              <form id="leave-form">
+                <div class="field"><label for="f-type">Leave type</label><select id="f-type" required></select></div>
+                <div class="form-row">
+                  <div class="field"><label for="f-start">First day</label><input type="date" id="f-start" required></div>
+                  <div class="field"><label for="f-end">Last day</label><input type="date" id="f-end" required></div>
+                </div>
+                <p class="helper" id="f-summary"></p>
+                <div class="field"><label for="f-note">Note for your manager (optional)</label><input id="f-note" placeholder="e.g. family wedding"></div>
+                <button class="btn primary" type="submit" id="f-go">Check these dates</button>
+              </form>
+            </div>
+          </div>
+          <div id="result" class="card hidden" style="margin-top:18px">
+            <div class="card-b">
+              <div id="r-banner"></div>
+              <div id="r-primary"></div>
+              <div id="r-facts" class="facts"></div>
+              <div class="section"><h4>Your shifts in this period</h4><div id="r-strip"></div><div id="r-shifts" class="shiftlist"></div></div>
+              <div class="section hidden" id="r-options-wrap"><h4 id="r-options-title">Options</h4><div id="r-options" class="options"></div></div>
+              <div id="r-actions" class="actions"></div>
+              <details class="section more" id="r-more"><summary>Good to know</summary><div id="r-reasons" class="reasons"></div></details>
+            </div>
+          </div>
+        </div>
+        <aside>
+          <div class="card">
+            <div class="card-h"><h2>Best windows for you</h2><select id="bw-len" title="Length of the break"><option value="7">1 week</option><option value="14">2 weeks</option><option value="28">4 weeks</option></select></div>
+            <div class="card-b" id="bestwin"><p class="muted small">Looking at the next 12 weeks…</p></div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <div class="card-h"><h2>Your leave</h2><span class="tiny muted" id="bal-asat"></span></div>
+            <div class="card-b" id="balances"></div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <div class="card-h"><h2>Your details</h2></div>
+            <div class="card-b" id="details"></div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <div class="card-h"><h2>Next shifts</h2></div>
+            <div class="card-b" id="shifts"></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- Assistant -->
+    <main id="s-assistant" class="screen">
+      <div class="screen-head"><div><h1>Ask the assistant</h1><p>Plain-language questions about your leave. It uses the same rules as the form and never shows colleagues' details.</p></div><span class="tiny muted" id="engine"></span></div>
+      <div class="card chat-wrap">
+        <aside class="convs">
+          <div class="card-h"><h2>Conversations</h2><button class="btn sm" id="chat-new">New</button></div>
+          <div class="list" id="convs"><div class="empty small">No conversations yet.</div></div>
+        </aside>
+        <div class="chat">
+          <div class="card-h"><h2 id="conv-title">New conversation</h2><button class="link" id="chat-delete" hidden>Delete</button></div>
+          <div class="msgs" id="msgs"></div>
+          <div class="composer">
+            <div class="chips" id="chat-chips">
+              <button class="chip">What's my leave balance?</button>
+              <button class="chip">Annual leave 12 to 16 October</button>
+              <button class="chip">When is the best time for 3 months of annual leave?</button>
+              <button class="chip">Can I take two weeks over Christmas?</button>
+              <button class="chip">I'm sick today</button>
+            </div>
+            <form id="chat-form"><input id="chat-in" placeholder="Type a question, e.g. can I take two weeks before Christmas?" autocomplete="off"><button class="btn primary" type="submit">Send</button></form>
+            <span class="chat-note">AI-assisted. Replies are checked against the rulebook; nothing is submitted until you confirm; a manager decides.</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Cover requests -->
+    <main id="s-cover" class="screen">
+      <div class="screen-head"><div><h1>Cover requests</h1><p>Shifts you have been proposed to cover for a colleague on leave. Accepting confirms you are available; declining lets the engine find someone else.</p></div></div>
+      <div class="card"><div id="cover"></div></div>
+    </main>
+
+    <!-- My requests -->
+    <main id="s-mine" class="screen">
+      <div class="screen-head"><div><h1>My requests</h1><p>Everything you have submitted and where it is up to.</p></div></div>
+      <div class="card"><div id="mine"></div></div>
+    </main>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/common.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

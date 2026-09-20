@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shift-H · Policy reference</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Code+Pro:wght@500&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar"><div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span>WA Health · Policy reference</span></div></div><div class="who"><a class="link" href="/">Staff app</a></div></header>
+<div class="policy" id="policy"><p class="muted">Loading…</p></div>
+<script src="/static/common.js"></script>
+<script>
+(async () => {
+  const code = location.pathname.split('/').pop().toUpperCase();
+  const el = document.getElementById('policy');
+  try {
+    const p = await api('/api/policy/' + code);
+    document.title = `${p.code} · ${p.name}`;
+    const sev = p.severity === 'hard' ? 'r' : p.severity === 'soft' ? 'a' : 'b';
+    el.innerHTML = `
+      <div class="head"><span class="code ${p.severity === 'hard' ? 'bad' : p.severity === 'soft' ? 'warn' : 'info'}">${p.code}</span><h1>${esc(p.name)}</h1></div>
+      <p class="muted small" style="margin-bottom:18px">${esc(p.category)} · <span class="pill ${sev}">${p.severity}</span> · ${p.enabled ? 'in force' : 'switched off'}${p.locked ? ' · locked governance rule' : ''} · rulebook v${p.rules_version}</p>
+      <div class="card"><div class="card-b">
+        <h4>What the rule does</h4><p style="margin:6px 0 14px">${esc(p.description || p.manager || p.public)}</p>
+        ${p.public ? `<h4>What staff are told</h4><p style="margin:6px 0 14px">${esc(p.public)}</p>` : ''}
+        ${Object.keys(p.params).length ? `<h4>Current parameters</h4>${Object.entries(p.params).map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(String(v))}</b></div>`).join('')}` : ''}
+      </div></div>
+      <div class="card" style="margin-top:16px"><div class="card-b">
+        <h4>Policy source</h4><p style="margin:6px 0 10px"><b>${esc(p.source || 'not recorded')}</b></p>
+        ${p.official.length ? `<h4>Official documents</h4><ul style="margin:6px 0 0 18px;padding:0">${p.official.map(o => `<li><a href="${o.url}" target="_blank" rel="noopener">${esc(o.title)}</a></li>`).join('')}</ul>` : ''}
+      </div></div>
+      ${p.passages.length ? `<div class="card" style="margin-top:16px"><div class="card-b"><h4>Relevant passages from the policy research</h4><p class="small muted" style="margin:4px 0 8px">Extracted from the WA Health policies and industrial agreements read for this project. Clause numbers are quoted as they appear in the source.</p>${p.passages.map(x => `<div class="passage"><div class="src">${esc(x.source)}</div>${esc(x.text)}</div>`).join('')}</div></div>` : ''}
+      ${p.agreements ? `<div class="card" style="margin-top:16px"><div class="card-b"><h4>Values by agreement</h4><div style="overflow:auto"><table><tr><th>Agreement</th>${Object.keys(Object.values(p.agreements)[0]).filter(k => k !== 'label').map(k => `<th class="num">${k.replaceAll('_', ' ')}</th>`).join('')}</tr>${Object.entries(p.agreements).map(([k, v]) => `<tr><td>${esc(v.label || k)}</td>${Object.keys(v).filter(x => x !== 'label').map(x => `<td class="num">${esc(String(v[x] ?? ''))}</td>`).join('')}</tr>`).join('')}</table></div></div></div>` : ''}`;
+  } catch (e) { el.innerHTML = `<div class="card"><div class="card-b"><h2>Unknown rule code</h2><p class="muted">${esc(code)} is not in the rulebook.</p></div></div>`; }
+})();
+</script>
+</body>
+</html>
