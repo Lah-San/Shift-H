@@ -211,7 +211,14 @@ a.b{display:inline-block;margin-top:8px;background:#0E7C86;color:#fff;text-decor
 @app.middleware('http')
 async def _demo_closed(request, call_next):
     """DEMO_CLOSED=1 puts a closed page in front of everything (pages and API); DEMO_CONTACT adds a request-access link."""
-    if os.environ.get('DEMO_CLOSED', '') not in ('', '0', 'false'):
+    closed = os.environ.get('DEMO_CLOSED', '') not in ('', '0', 'false')
+    close_at = os.environ.get('DEMO_CLOSE_AT', '')   # ISO time with offset, e.g. 2026-09-20T18:00:00+08:00: closes itself at that moment
+    if close_at and not closed:
+        try:
+            closed = dt.datetime.now(dt.timezone.utc) >= dt.datetime.fromisoformat(close_at)
+        except ValueError:
+            closed = False
+    if closed:
         from fastapi.responses import HTMLResponse, JSONResponse
         if request.url.path.startswith('/api/'):
             return JSONResponse({'detail': 'The demo has ended. Access is available on request.'}, status_code=403)
