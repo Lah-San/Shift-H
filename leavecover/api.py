@@ -106,6 +106,17 @@ def _emp_or_404(eid: str):
     return store.employees[eid]
 
 
+def _notify_cover(rid: str, requester: str, cover: list):
+    """Tell each proposed colleague, in the app, that Shift-H has asked them to cover a shift."""
+    lt = None
+    for c in cover or []:
+        if c.get('status') == 'covered' and c.get('candidate'):
+            cand = c['candidate']['employee_id']
+            d = dt.date.fromisoformat(str(c['date']))
+            db.notify('staff', cand, f"Cover request: {SHIFT_WORDS.get(c['category'], c['category'])} on {d:%a %d %b} ({c['unit']})",
+                      f"Shift-H proposes you cover this {c['hours']} h shift for a colleague on leave ({rid}). Accept or decline under Cover requests.", rid)
+
+
 LABEL_OUT = {'ACCEPTED': 'recorded', 'RECOMMEND_APPROVE': 'ready to approve', 'NEEDS_APPROVAL': 'manager to confirm', 'DECLINED': 'cannot be approved as requested', 'APPROVED': 'approved'}
 LABEL_STATUS = {'ACCEPTED': 'recorded', 'PENDING_MANAGER': 'with your manager', 'ESCALATED': 'escalated to your manager', 'APPROVED': 'approved', 'CHANGES_REQUESTED': 'changes requested'}
 
@@ -125,6 +136,7 @@ def submit(body: CheckIn) -> dict:
     rid = db.create_request(body.employee_id, body.leave_type, body.start.isoformat(), body.end.isoformat(), body.note, dec.outcome, status, mview, body.channel)
     if mview.get('cover'):
         db.save_assignments(rid, mview['cover'], status='proposed')
+        _notify_cover(rid, body.employee_id, mview['cover'])
     if status in ACTIVE:
         _apply_overlay(rid, body.employee_id, body.start, body.end, mview.get('cover', []))
     emp = store.employees[body.employee_id]
@@ -498,7 +510,9 @@ def manager_request(rid: str, who=Depends(require_role('manager', 'admin'))):
     for c in (r.get('decision') or {}).get('cover', []):
         if c.get('candidate'):
             c['response'] = st.get((c['date'], c['candidate']['employee_id']), 'proposed')
-    return {**r, 'position': e.position_name if e else '', 'unit': e.primary_unit if e else '', 'assignments': asg}
+    return {**r, 'position': e.position_name if e else '', 'unit': e.primary_unit if e else '', 'assignments': asg,
+            'emails': [{k: m[k] for k in ('ts', 'to_addr', 'employee_id', 'kind', 'status')} for m in db.emails(300) if m['request_id'] == rid],
+            'colleagues': {a['employee_id']: {'position': store.employees[a['employee_id']].position_name, 'unit': store.employees[a['employee_id']].primary_unit} for a in asg if a['employee_id'] in store.employees}}
 
 
 @app.post('/api/manager/requests/{rid}/decide')

@@ -268,3 +268,14 @@ details.more summary::before{content:"\25B8";font-size:12px} details.more[open] 
   .screen-head h1{font-size:22px}
   .login-card{padding:24px}
 }
+
+/* ---------- cover requests panel (console) ---------- */
+.cover-panel{border:1px solid var(--info-line);border-left:6px solid var(--info);border-radius:10px;padding:14px 16px;background:#F7FAFE}
+.cp-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap} .cp-head h4{color:var(--info);margin-bottom:4px}
+.cp-stats{display:flex;gap:6px;flex-wrap:wrap}
+.cp-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.cp-row{display:grid;grid-template-columns:1.1fr 1.3fr 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;border-left:5px solid var(--warn)}
+.cp-row.yes{border-left-color:var(--ok)} .cp-row.no{border-left-color:var(--bad)}
+.cp-row b{display:block;color:var(--navy)} .cp-row span{display:block;font-size:13px;color:var(--text2)}
+.cp-state{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+@media (max-width:760px){.cp-row{grid-template-columns:1fr 1fr}.cp-act{grid-column:1/-1}}

@@ -39,6 +39,7 @@ async function enterApp() {
   const t = new Date(me.today + 'T00:00:00'); const a = new Date(t); a.setDate(a.getDate() + 28); const b = new Date(a); b.setDate(b.getDate() + 4);
   $('#f-start').value = a.toISOString().slice(0, 10); $('#f-end').value = b.toISOString().slice(0, 10); summary();
   loadBestWindows();
+  api(`/api/me/${s.user}/cover`).then(rows => { const n = rows.filter(r => r.status === 'proposed').length; if (n) toast(`Shift-H has ${n} cover request${n > 1 ? 's' : ''} waiting for your answer (see Cover requests).`, 5000); }).catch(() => {});
   if (!$('#msgs').children.length) addMsg('ai', `Hello. You have ${me.balances.AL ? me.balances.AL.remaining_hours : 0} hours of annual leave (about ${asShifts(me.balances.AL ? me.balances.AL.remaining_hours : 0)}). Ask me to check dates, book leave or find a good time for a break.`);
 }
 function renderSide() {
