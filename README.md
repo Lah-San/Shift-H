@@ -72,6 +72,8 @@ Tests use their own scratch database; they never touch the live one.
 | `ADMIN_PASSWORD`, `MANAGER_PASSWORD`, `STAFF_PASSWORD` | Demo account passwords |
 | `HOST`, `PORT` | Bind address and port (`127.0.0.1:8000` locally; the Dockerfile sets `0.0.0.0:8080`) |
 | `LEAVECOVER_DB` | Path of the SQLite request database |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | Outbound email for decisions and cover requests (any SMTP provider; Brevo is free). Without them, messages are kept in the console's Emails list and can be opened in the manager's own mail app |
+| `APP_URL` | Public URL used in emails (optional; taken from the request otherwise) |
 
 Never commit `.env`; it is git-ignored.
 

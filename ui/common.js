@@ -106,6 +106,7 @@ const ui = (() => {
   }
   return {
     info: (title, html) => open({ title, body: html, buttons: [{ label: 'Close', cls: 'primary', result: true }] }),
+    email: (title, html, { value = '', okLabel = 'Send email' } = {}) => open({ title, body: `${html ? `<p class="small" style="margin-bottom:10px">${html}</p>` : ''}<input id="um-input" type="email" placeholder="name@health.wa.gov.au" value="${esc(value)}" autocomplete="email"><label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:400"><input type="checkbox" id="um-remember" checked style="width:auto"> Remember this address for next time</label>`, buttons: [{ label: 'Cancel', result: null }, { label: okLabel, cls: 'primary', value: () => { const v = $('#um-input').value.trim(); if (!v || !v.includes('@') || v.includes(' ')) { $('#um-input').focus(); $('#um-input').style.borderColor = 'var(--bad)'; return undefined; } return { email: v, remember: $('#um-remember').checked }; } }] }),
     confirm: (title, html, okLabel = 'Confirm', cls = 'primary') => open({ title, body: html, buttons: [{ label: 'Cancel', result: false }, { label: okLabel, cls, result: true }] }),
     prompt: (title, html, { placeholder = '', required = false, okLabel = 'Continue', cls = 'primary', rows = 3 } = {}) => open({ title, body: `${html ? `<p class="small" style="margin-bottom:10px">${html}</p>` : ''}<textarea id="um-input" rows="${rows}" placeholder="${esc(placeholder)}"></textarea>${required ? '<p class="small muted" style="margin-top:6px">Required.</p>' : ''}`, buttons: [{ label: 'Cancel', result: null }, { label: okLabel, cls, value: () => { const v = $('#um-input').value.trim(); if (required && !v) { $('#um-input').focus(); $('#um-input').style.borderColor = 'var(--bad)'; return undefined; } return v; } }] }),
   };
@@ -132,3 +133,17 @@ function gapDetails(d) {
 function altCard(a, cls = 'alt') {
   return `<div class="opt click ${cls}" data-s="${a.start}" data-e="${a.end}"><b>${fmtD(a.start)} – ${fmtD(a.end)}</b><p>${esc(a.label)}${a.fit != null ? ` · fit ${a.fit}%` : ''}</p>${(a.why || []).length ? `<ul class="why">${a.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}</div>`;
 }
+
+
+/* ---------- off-canvas sidebar on small screens ---------- */
+(function initNav() {
+  const btn = document.getElementById('nav-toggle'), nav = document.querySelector('.sidenav');
+  if (!btn || !nav) return;
+  let bd = document.getElementById('nav-backdrop');
+  if (!bd) { bd = document.createElement('div'); bd.id = 'nav-backdrop'; bd.className = 'nav-backdrop'; document.body.appendChild(bd); }
+  const set = open => { nav.classList.toggle('open', open); bd.classList.toggle('show', open); btn.setAttribute('aria-expanded', String(open)); document.body.classList.toggle('nav-open', open); };
+  btn.onclick = () => set(!nav.classList.contains('open'));
+  bd.onclick = () => set(false);
+  nav.addEventListener('click', e => { if (e.target.closest('[data-screen]')) set(false); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 980) set(false); });
+})();

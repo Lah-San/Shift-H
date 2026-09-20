@@ -15,6 +15,7 @@ from .engine import Engine
 from .db import RequestDB
 from .coverage import requirement
 from . import chat as chatmod
+from . import mailer
 from . import policy_check
 from . import suggestions as sugg
 
@@ -350,6 +351,7 @@ def me(eid: str, who=Depends(require_user)):
     s['leave_types'] = [{'code': k, **v} for k, v in rb.leave_types().items() if (store.employees[eid].job_type != 'CASUAL' or v.get('casual_allowed'))]
     s['today'] = rb.today().isoformat()
     s['public_holidays'] = {d.isoformat(): n for d, n in store.holidays.items()}
+    s['contact_email'] = db.get_contact(eid)
     return s
 
 
@@ -1049,6 +1051,130 @@ def quality(who=Depends(require_role('manager', 'admin'))):
     out['rules'] = len(rb.rules()); out['rules_version'] = rb.version
     out['data'] = {'employees': len(store.employees), 'units': len(store.units), 'shifts': sum(len(v) for v in store.shifts_by_emp.values()), 'sick_rate_overall': round(store.sick_rate_overall, 4)}
     return out
+
+
+# ----------------------------------------------------------------------------- email: decisions and cover requests
+def _app_url(request) -> str:
+    env = os.environ.get('APP_URL')
+    if env:
+        return env.rstrip('/')
+    host = request.headers.get('x-forwarded-host') or request.headers.get('host') or '127.0.0.1:8000'
+    proto = request.headers.get('x-forwarded-proto') or ('https' if not host.startswith(('127.', 'localhost')) else 'http')
+    return f'{proto}://{host}'
+
+
+def _email_text(kind: str, r: dict, a: dict | None, url: str) -> tuple[str, str]:
+    lt = (rb.leave_type(r['leave_type']) or {}).get('label', r['leave_type'])
+    if kind == 'cover':
+        d = dt.date.fromisoformat(a['date'])
+        subject = f"Shift-H: can you cover {SHIFT_WORDS.get(a['category'], a['category'])} on {d:%a %d %b} ({a['unit']})?"
+        body = (f"Hello,\n\nYou have been proposed to cover a shift for a colleague's {lt.lower()}:\n\n"
+                f"  Date:   {d:%A %d %B %Y}\n  Shift:  {SHIFT_WORDS.get(a['category'], a['category'])} ({a['hours']} h)\n  Ward:   {a['unit']}\n  Basis:  {TIER_WORDS.get(a['tier'], a['tier'])}\n\n"
+                f"Please accept or decline in Shift-H under Cover requests: {url}/\n\n"
+                f"Reference {r['id']}. This shift was checked against your rest, hours and fatigue rules before it was proposed.\n")
+        return subject, body
+    status_words = {'APPROVED': 'approved', 'DECLINED_BY_MANAGER': 'not approved', 'CHANGES_REQUESTED': 'returned with a request for changes', 'ACCEPTED': 'recorded', 'PENDING_MANAGER': 'received and waiting for a decision', 'ESCALATED': 'escalated for review'}
+    word = status_words.get(r['status'], r['status'].lower().replace('_', ' '))
+    subject = f"Shift-H: your {lt.lower()} {r['start']} to {r['end']} is {word}"
+    body = (f"Hello,\n\nYour leave request {r['id']} ({lt.lower()}, {dt.date.fromisoformat(r['start']):%A %d %B %Y} to {dt.date.fromisoformat(r['end']):%A %d %B %Y}) is {word}.\n")
+    if r.get('manager_note'):
+        body += f"\nManager's note: {r['manager_note']}\n"
+    body += f"\nSee the details and your requests in Shift-H: {url}/\n"
+    return subject, body
+
+
+SHIFT_WORDS = {'AM': 'morning shift', 'PM': 'afternoon shift', 'NIGHT': 'night shift', 'LONG_DAY': '12-hour day', 'DAY': 'day shift', 'ONCALL_24H': 'on call'}
+TIER_WORDS = {'ordinary': 'ordinary hours', 'redeploy': 'moved from another ward', 'casual': 'casual pool', 'overtime': 'overtime (manager authorised)', 'agency': 'agency'}
+
+
+class EmailIn(BaseModel):
+    kind: str = 'decision'          # decision | cover
+    to: str = ''                    # optional: address entered in the modal
+    assignment_id: str = ''         # for kind=cover
+    remember: bool = True           # store the entered address for next time
+
+
+@app.post('/api/manager/requests/{rid}/email')
+def email_request(rid: str, body: EmailIn, request: Request, who=Depends(require_role('manager', 'admin'))):
+    """Email the decision to the staff member, or a cover request to the proposed colleague. If no address is known and none
+    is given, returns needs_address so the UI can ask for one. Always records the message in the outbox."""
+    r = db.get_request(rid)
+    if not r:
+        raise HTTPException(404)
+    a = None
+    if body.kind == 'cover':
+        a = db.get_assignment(body.assignment_id)
+        if not a or a['request_id'] != rid:
+            raise HTTPException(404, 'cover line not found')
+        recipient = a['employee_id']
+    else:
+        recipient = r['employee_id']
+    to = (body.to or '').strip() or db.get_contact(recipient) or ''
+    if not to:
+        return {'needs_address': True, 'recipient': recipient, 'has_contact': False}
+    if '@' not in to or ' ' in to:
+        raise HTTPException(400, 'That does not look like an email address.')
+    if body.to and body.remember:
+        db.set_contact(recipient, to)
+    subject, text = _email_text(body.kind, r, a, _app_url(request))
+    res = mailer.send(to, subject, text)
+    status = 'sent' if res['sent'] else ('outbox' if res['error'] == 'not configured' else 'failed')
+    db.log_email(to, recipient, subject, text, rid, body.kind, status, res['error'])
+    db.audit(who['user'], 'email', rid, {'kind': body.kind, 'to': to, 'status': status})
+    return {'needs_address': False, 'to': to, 'status': status, 'configured': mailer.configured(), 'error': res['error'] if status == 'failed' else '',
+            'hint': '' if res['sent'] else mailer.provider_hint(), 'mailto': mailer.mailto(to, subject, text), 'subject': subject}
+
+
+@app.get('/api/manager/emails')
+def emails_outbox(who=Depends(require_role('manager', 'admin'))):
+    return {'configured': mailer.configured(), 'emails': db.emails()}
+
+
+class ContactIn(BaseModel):
+    email: str = Field(max_length=120)
+
+
+@app.get('/api/me/{eid}/contact')
+def get_contact(eid: str, who=Depends(require_user)):
+    _own(who, eid); _emp_or_404(eid)
+    return {'employee_id': eid, 'email': db.get_contact(eid)}
+
+
+@app.put('/api/me/{eid}/contact')
+def put_contact(eid: str, body: ContactIn, who=Depends(require_user)):
+    _own(who, eid); _emp_or_404(eid)
+    e = body.email.strip()
+    if e and ('@' not in e or ' ' in e):
+        raise HTTPException(400, 'That does not look like an email address.')
+    db.set_contact(eid, e)
+    db.audit(who['user'], 'contact', None, {'employee_id': eid, 'set': bool(e)})
+    return {'employee_id': eid, 'email': e}
+
+
+# ----------------------------------------------------------------------------- staff roster page
+@app.get('/api/me/{eid}/roster')
+def my_roster(eid: str, start: dt.date, end: dt.date, who=Depends(require_user)):
+    """Day-by-day roster for the staff member: rostered shifts, cover shifts accepted through the app, leave, public
+    holidays, and whether the roster is published for that day."""
+    _own(who, eid); e = _emp_or_404(eid)
+    if (end - start).days > 92:
+        raise HTTPException(400, 'at most 93 days at a time')
+    mine = {a['date']: a for a in db.assignments_for(eid) if a['status'] in ('accepted', 'confirmed', 'proposed') and a.get('request_status') not in ('WITHDRAWN', 'DECLINED_BY_MANAGER')}
+    days = []
+    d = start
+    while d <= end:
+        shifts = [{'unit': s.unit, 'category': s.category, 'start': f'{s.start_min//60:02d}:{s.start_min%60:02d}', 'end': f'{s.end_min//60:02d}:{s.end_min%60:02d}', 'hours': s.paid_hours, 'kind': 'rostered'}
+                  for s in store.shift_dates_by_emp.get(eid, {}).get(d, ())]
+        cov = mine.get(d.isoformat())
+        if cov:
+            shifts.append({'unit': cov['unit'], 'category': cov['category'], 'start': '', 'end': '', 'hours': cov['hours'], 'kind': 'cover', 'status': cov['status'], 'request_id': cov['request_id']})
+        fam = store.leave_family_by_day.get(eid, {}).get(d)
+        dyn = bool(getattr(store, 'dyn_absent', {}).get(eid, {}).get(d))
+        days.append({'date': d.isoformat(), 'weekday': d.strftime('%a'), 'published': store.in_window(eid, d), 'public_holiday': store.holidays.get(d),
+                     'shifts': shifts, 'leave': (fam.replace('_', ' ').title() if fam else ('Requested leave' if dyn else None)), 'today': d == rb.today()})
+        d += dt.timedelta(days=1)
+    return {'employee_id': eid, 'unit': e.primary_unit, 'window': [str(e.window_start), str(e.window_end)] if e.window_start else None, 'days': days,
+            'hours': round(sum(s['hours'] for x in days for s in x['shifts']), 1)}
 
 
 # ----------------------------------------------------------------------------- policy reference for a rule code

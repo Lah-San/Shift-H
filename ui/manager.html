@@ -9,6 +9,7 @@
 </head>
 <body>
 <header class="topbar">
+  <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
   <div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span id="brand-sub">WA Health · Manager</span></div></div>
   <div class="who"><span id="who"></span><a class="link" href="/">Staff app</a><button class="link" id="signout">Sign out</button></div>
 </header>
@@ -101,8 +102,9 @@
     <div class="card"><div id="hist"></div></div>
   </main>
   <main id="s-notes" class="screen">
-    <div class="screen-head"><div><h1>Notifications</h1><p>Everything the engine has told you: new requests, urgent leave, declined cover. This is the manager's in-app inbox; there is no email in the demo.</p></div></div>
+    <div class="screen-head"><div><h1>Notifications</h1><p>Everything the engine has told you: new requests, urgent leave, declined cover. Emails you send from a decision or a cover plan are listed underneath.</p></div></div>
     <div class="card"><div class="list" id="notes"></div></div>
+    <div class="card" style="margin-top:18px"><div class="card-h"><h2>Emails</h2><span class="small muted" id="mail-status"></span></div><div class="list" id="outbox"></div></div>
   </main>
 </div>
 <!-- change drawer -->

@@ -18,7 +18,7 @@ $('#login-form').addEventListener('submit', async e => {
 });
 $('#signout').onclick = () => { session.clear(); location.reload(); };
 $$('.sidenav [data-screen]').forEach(b => b.onclick = () => show(b.dataset.screen));
-function show(name) { $$('.sidenav [data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === name)); $$('.screen').forEach(s => s.classList.toggle('active', s.id === 's-' + name)); if (name === 'mine') renderMine(); if (name === 'cover') renderCover(); if (name === 'assistant') loadConvs(); }
+function show(name) { $$('.sidenav [data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === name)); $$('.screen').forEach(s => s.classList.toggle('active', s.id === 's-' + name)); if (name === 'mine') renderMine(); if (name === 'cover') renderCover(); if (name === 'assistant') loadConvs(); if (name === 'roster') renderRoster(); window.scrollTo(0, 0); }
 
 async function renderCover() {
   const rows = await api(`/api/me/${session.get().user}/cover`);
@@ -46,7 +46,9 @@ function renderSide() {
   const keys = Object.keys(me.balances).sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
   $('#balances').innerHTML = keys.slice(0, 6).map(k => { const v = me.balances[k]; return `<div class="bal ${v.excess ? 'excess' : ''}"><div class="row"><span>${NAMES[k] || k}</span><b>${asShifts(v.remaining_hours)} <span class="muted small">(${v.remaining_hours} h)</span></b></div><div class="bar"><i style="width:${Math.min(100, v.remaining_hours / 400 * 100)}%"></i></div>${k === 'AL' && me.accrual_hours_per_year ? `<div class="small muted" style="margin-top:4px">Accrues about ${(me.accrual_hours_per_year / 26).toFixed(1)} h a fortnight${v.anniversary ? ` · anniversary ${fmtD(v.anniversary)}` : ''}</div>` : ''}${v.excess ? '<div class="note">Above two years of leave: your requests are given priority.</div>' : ''}</div>`; }).join('') || '<p class="muted small">No balances on file.</p>';
   $('#bal-asat').textContent = me.balances.AL ? `as at ${fmtD(me.balances.AL.as_at)} · ${shiftHours()} h per shift` : '';
-  $('#details').innerHTML = [['Position', me.position], ['Ward', `${(me.unit_type || '').replace('Synthetic ', '')} ${me.primary_unit || ''}`], ['Employment', me.job_type.toLowerCase()], ['Contract', `${me.contract_hours} h per fortnight`], ['Agreement', me.agreement], ['Contract ends', me.contract_end ? fmtD(me.contract_end) : 'ongoing']].map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+  $('#details').innerHTML = [['Position', me.position], ['Ward', `${(me.unit_type || '').replace('Synthetic ', '')} ${me.primary_unit || ''}`], ['Employment', me.job_type.toLowerCase()], ['Contract', `${me.contract_hours} h per fortnight`], ['Agreement', me.agreement], ['Contract ends', me.contract_end ? fmtD(me.contract_end) : 'ongoing']].map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(v)}</b></div>`).join('')
+    + `<div class="kv"><span>Email for decisions</span><b>${me.contact_email ? esc(me.contact_email) : '<span class="muted" style="font-weight:400">not set</span>'} <button class="link" id="set-email">${me.contact_email ? 'change' : 'add'}</button></b></div>`;
+  $('#set-email').onclick = async () => { const r = await ui.email('Your email address', 'Decisions on your requests and cover requests are emailed here. Leave it empty to remove.', { value: me.contact_email || '', okLabel: 'Save' }); if (!r) return; try { await api(`/api/me/${session.get().user}/contact`, { method: 'PUT', body: JSON.stringify({ email: r.email }) }); toast('Email saved'); refreshMe(); } catch (e) { toast(e.message); } };
   $('#shifts').innerHTML = me.next_shifts.slice(0, 6).map(x => `<div class="kv"><span>${fmtD(x.date)}</span><b>${SHIFT[x.category] || x.category} ${x.start}–${x.end} · ${x.unit}</b></div>`).join('') || '<p class="muted small">No roster published for the coming days.</p>';
   $('#n-mine').textContent = (me.requests || []).length;
   api(`/api/me/${session.get().user}/cover`).then(rows => { $('#n-cover').textContent = rows.filter(r => r.status === 'proposed').length; }).catch(() => {});
@@ -220,3 +222,37 @@ $('#chat-new').onclick = newConv;
 $('#chat-delete').onclick = async () => { if (!conv) return; if (!(await ui.confirm('Delete conversation', 'Delete this conversation from your history? Requests you submitted are kept.', 'Delete', 'danger'))) return; await api(`/api/me/${session.get().user}/conversations/${conv}`, { method: 'DELETE' }); newConv(); loadConvs(); };
 $('#chat-form').onsubmit = e => { e.preventDefault(); const v = $('#chat-in').value; $('#chat-in').value = ''; send(v); };
 $$('#chat-chips .chip').forEach(c => c.onclick = () => send(c.textContent));
+
+
+/* ---------- my roster ---------- */
+let roMonth = null;   // first day of the month shown
+const SHIFT_CLASS = { AM: 'am', PM: 'pm', NIGHT: 'night', LONG_DAY: 'long', DAY: 'am', ONCALL_24H: 'oncall' };
+async function renderRoster() {
+  if (!roMonth) { const t = new Date(me.today + 'T00:00:00'); roMonth = new Date(t.getFullYear(), t.getMonth(), 1); }
+  const y = roMonth.getFullYear(), m = roMonth.getMonth();
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  $('#ro-title').textContent = first.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+  $('#roster').innerHTML = '<div class="empty small">Loading your roster…</div>';
+  let r; try { r = await api(`/api/me/${session.get().user}/roster?start=${iso(first)}&end=${iso(last)}`); } catch (e) { $('#roster').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  const byDate = Object.fromEntries(r.days.map(d => [d.date, d]));
+  const shifts = r.days.reduce((a, d) => a + d.shifts.filter(s => s.kind === 'rostered').length, 0), nights = r.days.reduce((a, d) => a + d.shifts.filter(s => s.category === 'NIGHT').length, 0);
+  const leave = r.days.filter(d => d.leave).length, cover = r.days.reduce((a, d) => a + d.shifts.filter(s => s.kind === 'cover').length, 0), unpub = r.days.filter(d => !d.published).length;
+  $('#ro-summary').innerHTML = [[shifts, 'rostered shifts'], [`${r.hours} h`, 'paid hours'], [nights, 'nights'], [leave, 'days of leave'], [cover, 'cover shifts accepted']].map(([v, l]) => `<div class="fact"><b>${v}</b><span>${l}</span></div>`).join('');
+  // calendar grid, Monday first
+  let html = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => `<div class="rhead">${w}</div>`).join('');
+  const lead = (first.getDay() + 6) % 7;
+  for (let i = 0; i < lead; i++) html += '<div class="rday pad"></div>';
+  for (let day = 1; day <= last.getDate(); day++) {
+    const k = iso(new Date(y, m, day)); const d = byDate[k] || { shifts: [], published: false };
+    const cls = ['rday', d.today ? 'today' : '', d.public_holiday ? 'ph' : '', !d.published ? 'unpub' : '', d.leave ? 'leave' : ''].filter(Boolean).join(' ');
+    html += `<div class="${cls}" data-wd="${d.weekday || ''}" title="${d.public_holiday ? esc(d.public_holiday) : !d.published ? 'Roster not published yet' : ''}"><div class="rn">${day}${d.public_holiday ? ' <em>PH</em>' : ''}</div>${d.leave ? `<div class="rs lv">${esc(d.leave)}</div>` : ''}${d.shifts.map(s => `<div class="rs ${s.kind === 'cover' ? 'cover' : SHIFT_CLASS[s.category] || 'am'}">${SHIFT[s.category] || s.category}${s.start ? ` ${s.start}–${s.end}` : ''}<small>${esc(s.unit)}${s.kind === 'cover' ? ` · cover (${s.status})` : ''}</small></div>`).join('')}${!d.shifts.length && !d.leave && d.published ? '<div class="rs off">off</div>' : ''}</div>`;
+  }
+  $('#roster').innerHTML = html;
+  if (unpub === r.days.length) $('#roster').insertAdjacentHTML('beforebegin', '');
+}
+$('#ro-prev').onclick = () => { roMonth = new Date(roMonth.getFullYear(), roMonth.getMonth() - 1, 1); renderRoster(); };
+$('#ro-next').onclick = () => { roMonth = new Date(roMonth.getFullYear(), roMonth.getMonth() + 1, 1); renderRoster(); };
+$('#ro-today').onclick = () => { roMonth = null; renderRoster(); };
+$('#convs-toggle').onclick = () => $('.convs').classList.toggle('open');
+document.getElementById('convs').addEventListener('click', e => { if (e.target.closest('.item')) $('.convs').classList.remove('open'); });

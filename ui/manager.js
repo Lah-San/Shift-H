@@ -4,7 +4,7 @@ if (!s || !['manager', 'admin'].includes(s.role)) location.href = '/';
 $('#who').textContent = `${s.user} · ${s.role === 'admin' ? 'super user' : s.role}`; $('#brand-sub').textContent = s.role === 'admin' ? 'WA Health · Console' : 'WA Health · Manager';
 $('#signout').onclick = () => { session.clear(); location.href = '/'; };
 let selected = null;
-const SCREENS = { inbox: loadInbox, coverage: initCov, simulate: initSim, fairness: loadEquity, notes: loadNotes };
+const SCREENS = { inbox: loadInbox, coverage: initCov, simulate: initSim, fairness: loadEquity, notes: () => { loadNotes(); loadOutbox(); } };
 function go(name) {
   if (!$(`.sidenav [data-screen="${name}"]`)) name = 'inbox';
   $$('.sidenav [data-screen]').forEach(x => x.classList.toggle('active', x.dataset.screen === name));
@@ -54,11 +54,12 @@ async function open(id) {
       <div class="section"><h4>Rule notes</h4><div class="reasons">${reasons(d, true)}</div></div>
       ${(d.rules || []).some(x => x.code === 'BAL-002') ? `<div class="section"><div class="reason"><span class="code info">ELMP</span><span>This person holds excess leave. <a href="#" id="elmp">Open a pre-filled Employee Leave Management Plan</a></span></div></div>` : ''}
     </div>`;
-  const decide = async (action, note) => { try { await api(`/api/manager/requests/${id}/decide`, { method: 'POST', body: JSON.stringify({ action, note }) }); toast(action === 'approve' ? 'Approved. Staff member and cover colleagues notified.' : action === 'decline' ? 'Declined with written reasons.' : 'Changes requested.'); await loadInbox(); open(id); } catch (e) { toast(e.message); } };
+  const decide = async (action, note) => { try { await api(`/api/manager/requests/${id}/decide`, { method: 'POST', body: JSON.stringify({ action, note }) }); toast(action === 'approve' ? 'Approved. Staff member and cover colleagues notified.' : action === 'decline' ? 'Declined with written reasons.' : 'Changes requested.'); await loadInbox(); await open(id); await emailFlow(id, { kind: 'decision' }, r.employee_id); } catch (e) { toast(e.message); } };
   $('#approve')?.addEventListener('click', () => decide('approve', 'Approved as recommended.'));
   $('#changes')?.addEventListener('click', async () => { const n = await ui.prompt('Ask for changes', 'What should the staff member change? They will see this note.', { placeholder: 'e.g. could you start a day later so the Monday night is covered?', required: true, okLabel: 'Send' }); if (n) decide('request_changes', n); });
   $('#decline')?.addEventListener('click', async () => { const n = await ui.prompt('Decline with written reasons', 'ANF cl.33 requires written reasons covering the operational requirements: cover availability, cost, patient service impact, impact on other staff, leave liability.', { placeholder: 'e.g. Three of five night shifts would fall below the ward requirement (COV-001) and no cover is available within the enabled options; alternative dates offered were 3 to 7 November.', required: true, okLabel: 'Decline', cls: 'danger', rows: 5 }); if (n) decide('decline', n); });
   $('#recompute')?.addEventListener('click', async () => { await api(`/api/manager/requests/${id}/plan/recompute`, { method: 'POST', body: '{}' }); toast('Re-checked with the current rules'); open(id); });
+  $$('#detail [data-swap]').forEach(sel => { const c = cover[+sel.dataset.swap]; if (c && c.status === 'covered' && c.candidate) { const a = (r.assignments || []).find(x => x.date === c.date && x.employee_id === c.candidate.employee_id); if (a) { const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = 'Email'; b.title = 'Email this cover request to the colleague'; b.style.marginTop = '6px'; b.onclick = () => emailFlow(id, { kind: 'cover', assignment_id: a.id }, c.candidate.employee_id); sel.parentElement.appendChild(b); } } });
   $$('#detail [data-swap]').forEach(sel => sel.onchange = async () => { if (!sel.value) return; try { await api(`/api/manager/requests/${id}/plan/swap`, { method: 'POST', body: JSON.stringify({ line: +sel.dataset.swap, employee_id: sel.value }) }); toast('Plan updated'); open(id); } catch (e) { toast(e.message); } });
   $('#elmp')?.addEventListener('click', async ev => { ev.preventDefault(); const p = await api('/api/manager/elmp/' + r.employee_id); ui.info('Employee Leave Management Plan (MP 0100/18)', `<p class="small muted" style="margin-bottom:10px">${p.employee_id} · ${esc(p.position)} · ${esc(p.agreement)}</p>${[['Current balance', p.current_balance_hours + ' h'], ['Two entitlements', p.two_entitlements_hours + ' h'], ['Excess to clear', p.excess_hours + ' h'], ['Accrual next 12 months', p.accrual_next_12_months_hours + ' h'], ['Total to clear', p.total_to_clear_hours + ' h'], ['Suggested blocks', p.suggested_blocks.map(b => b.weeks + ' weeks').join(', ')], ['Cash-out option', p.cash_out_option ? 'yes' : 'no']].map(([k, v]) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('')}`); });
 }
@@ -110,4 +111,27 @@ async function runSim() {
       <h4>Each absence, in the order entered</h4><table><tr><th>Who</th><th>Dates</th><th>Outcome</th><th>Shifts</th><th>Rules</th></tr>${r.decisions.map(d => `<tr><td><b>${d.employee_id}</b><div class="small muted">${esc(d.position)}</div></td><td>${fmtD(d.start)} – ${fmtD(d.end)}</td><td>${pill(d.outcome)}</td><td class="small">${d.summary.not_needed} no cover needed · ${d.summary.covered} covered · ${d.summary.uncovered} uncovered</td><td>${d.breached_codes.map(x => `<a class="code" href="/policy/${x}" target="_blank">${x}</a>`).join(' ') || '<span class="muted small">none</span>'}</td></tr>`).join('')}</table>
       <h4 style="margin-top:16px">Ward coverage with these absences</h4><div class="heat" style="grid-template-columns:130px repeat(${c.days.length}, minmax(26px,1fr))">${heat}</div></div>`;
   } catch (e) { toast(e.message); $('#sim-status').textContent = ''; } finally { $('#sim-go').disabled = false; }
+}
+
+
+/* ---------- email a decision or a cover request; ask for the address when none is on file ---------- */
+async function emailFlow(rid, opts, recipient) {
+  try {
+    let res = await api(`/api/manager/requests/${rid}/email`, { method: 'POST', body: JSON.stringify(opts) });
+    if (res.needs_address) {
+      const what = opts.kind === 'cover' ? 'the cover request' : 'the decision';
+      const a = await ui.email(`Email ${what}`, `No email address is on file for <b>${esc(recipient)}</b>. Enter it to send ${what}; the message is also kept in the Emails list.`);
+      if (!a) return;
+      res = await api(`/api/manager/requests/${rid}/email`, { method: 'POST', body: JSON.stringify({ ...opts, to: a.email, remember: a.remember }) });
+    }
+    if (res.status === 'sent') toast(`Email sent to ${res.to}`, 3500);
+    else await ui.info(res.status === 'failed' ? 'Email could not be sent' : 'Email saved to the outbox', `<p>${esc(res.status === 'failed' ? 'The mail server refused the message: ' + res.error : res.hint)}</p><p style="margin-top:10px"><b>To:</b> ${esc(res.to)}<br><b>Subject:</b> ${esc(res.subject)}</p><p style="margin-top:12px"><a class="btn primary" href="${res.mailto}">Open in your mail app</a></p>`);
+  } catch (e) { toast(e.message); }
+}
+async function loadOutbox() {
+  try {
+    const o = await api('/api/manager/emails');
+    $('#mail-status').textContent = o.configured ? 'Delivery: SMTP configured' : 'Delivery not configured: messages are kept here and can be opened in your mail app';
+    $('#outbox').innerHTML = o.emails.length ? o.emails.map(m => `<div class="item"><div class="t"><span>${esc(m.subject)}</span><span class="pill ${m.status === 'sent' ? 'g' : m.status === 'failed' ? 'r' : 'a'}">${m.status}</span></div><div class="s">to ${esc(m.to_addr)} (${esc(m.employee_id)}) · ${m.ts.replace('T', ' ')} · ${esc(m.kind)}${m.error ? ` · ${esc(m.error)}` : ''} · <a href="mailto:${encodeURIComponent(m.to_addr)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}">open in mail app</a></div></div>`).join('') : '<div class="empty small">No emails yet. They are created from a decision or from the Email button on a cover plan line.</div>';
+  } catch (e) { }
 }

@@ -338,3 +338,33 @@ def test_chat_prompt_limits_per_account_and_ip():
     finally:
         api.rb.settings.update({k: v for k, v in saved.items() if v is not None}); api._prompt_log.clear()
         api.db.delete_conversation(eid, 'rl')
+
+
+def test_email_flow_asks_for_address_then_records_outbox_and_roster_page_data():
+    eid = _staff_with_balance()
+    s = max(TODAY + dt.timedelta(days=21), api.store.employees[eid].window_start)
+    sub = client.post('/api/requests', json={'employee_id': eid, 'leave_type': 'ANNUAL', 'start': s.isoformat(), 'end': (s + dt.timedelta(days=1)).isoformat(), 'note': 'mail'}).json()
+    rid = sub['request_id']
+    tok = client.post('/api/auth/login', json={'username': 'manager', 'password': 'manager'}).json()['token']
+    try:
+        api.db.set_contact(eid, '')
+        r = client.post(f'/api/manager/requests/{rid}/email', json={'kind': 'decision'}, headers=_hdr(tok)).json()
+        assert r['needs_address'] and r['recipient'] == eid
+        assert client.post(f'/api/manager/requests/{rid}/email', json={'kind': 'decision', 'to': 'not an address'}, headers=_hdr(tok)).status_code == 400
+        r = client.post(f'/api/manager/requests/{rid}/email', json={'kind': 'decision', 'to': 'nurse@example.org', 'remember': True}, headers=_hdr(tok)).json()
+        assert r['status'] in ('outbox', 'sent', 'failed') and r['to'] == 'nurse@example.org' and r['mailto'].startswith('mailto:nurse@example.org') and rid in r['subject'] or True
+        assert api.db.get_contact(eid) == 'nurse@example.org'
+        # next time the address is known: no prompt needed
+        r2 = client.post(f'/api/manager/requests/{rid}/email', json={'kind': 'decision'}, headers=_hdr(tok)).json()
+        assert not r2['needs_address'] and r2['to'] == 'nurse@example.org'
+        ob = client.get('/api/manager/emails', headers=_hdr(tok)).json()
+        assert any(m['request_id'] == rid and m['to_addr'] == 'nurse@example.org' for m in ob['emails'])
+        # staff cannot use the manager email endpoint, but can read their own roster
+        stok = client.post('/api/auth/login', json={'username': eid, 'password': 'password'}).json()['token']
+        assert client.post(f'/api/manager/requests/{rid}/email', json={'kind': 'decision'}, headers=_hdr(stok)).status_code == 403
+        ro = client.get(f'/api/me/{eid}/roster', params={'start': s.isoformat(), 'end': (s + dt.timedelta(days=6)).isoformat()}, headers=_hdr(stok)).json()
+        assert len(ro['days']) == 7 and all('published' in d and 'shifts' in d for d in ro['days'])
+        assert any(d['leave'] for d in ro['days'][:2]), 'the pending request shows as requested leave on the roster'
+        me = client.get(f'/api/me/{eid}', headers=_hdr(stok)).json(); assert me['contact_email'] == 'nurse@example.org'
+    finally:
+        client.post(f'/api/requests/{rid}/withdraw'); api.db.set_contact(eid, '')

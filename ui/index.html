@@ -27,6 +27,7 @@
 <!-- App -->
 <div id="app" class="hidden">
   <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="brand"><span class="mark">SH</span><div><b>Shift-H</b><br><span>WA Health</span></div></div>
     <div class="who"><span id="who"></span><span class="pill" id="who-role">Staff</span><button class="link" id="signout">Sign out</button></div>
   </header>
@@ -35,6 +36,7 @@
       <h4>Leave</h4>
       <button data-screen="request" class="active">Request leave</button>
       <button data-screen="assistant">Ask the assistant</button>
+      <button data-screen="roster">My roster</button>
       <button data-screen="mine">My requests <span class="count" id="n-mine">0</span></button>
       <button data-screen="cover">Cover requests <span class="count" id="n-cover">0</span></button>
       <div class="foot">Rules and cover are checked by the Shift-H engine. A manager makes every final decision.</div>
@@ -102,7 +104,7 @@
           <div class="list" id="convs"><div class="empty small">No conversations yet.</div></div>
         </aside>
         <div class="chat">
-          <div class="card-h"><h2 id="conv-title">New conversation</h2><button class="link" id="chat-delete" hidden>Delete</button></div>
+          <div class="card-h"><button class="link convs-toggle" id="convs-toggle">☰ Conversations</button><h2 id="conv-title">New conversation</h2><button class="link" id="chat-delete" hidden>Delete</button></div>
           <div class="msgs" id="msgs"></div>
           <div class="composer">
             <div class="chips" id="chat-chips">
@@ -117,6 +119,12 @@
           </div>
         </div>
       </div>
+    </main>
+
+    <!-- My roster -->
+    <main id="s-roster" class="screen">
+      <div class="screen-head"><div><h1>My roster</h1><p>Your published shifts, leave and public holidays. Cover shifts you accepted appear here too.</p></div><div class="month-nav"><button class="btn sm" id="ro-prev" aria-label="Previous month">‹</button><b id="ro-title"></b><button class="btn sm" id="ro-next" aria-label="Next month">›</button><button class="btn sm" id="ro-today">Today</button></div></div>
+      <div class="card"><div class="card-b"><div id="ro-summary" class="facts"></div><div id="roster" class="roster"></div><div class="legend"><span><i class="lg-am"></i>morning</span><span><i class="lg-pm"></i>afternoon</span><span><i class="lg-night"></i>night</span><span><i class="lg-cover"></i>cover you accepted</span><span><i class="lg-leave"></i>leave</span><span><i class="lg-ph"></i>public holiday</span><span><i class="lg-unpub"></i>roster not published yet</span></div></div></div>
     </main>
 
     <!-- Cover requests -->

@@ -30,6 +30,10 @@ class RequestDB:
             document TEXT, document_sha TEXT, verdict TEXT, confidence REAL, review TEXT, status TEXT, applied_ts TEXT, override_reason TEXT);
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, audience TEXT, unit TEXT, title TEXT, body TEXT, request_id TEXT, read INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS contacts (
+            employee_id TEXT PRIMARY KEY, email TEXT, updated TEXT);
+        CREATE TABLE IF NOT EXISTS emails (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, to_addr TEXT, employee_id TEXT, subject TEXT, body TEXT, request_id TEXT, kind TEXT, status TEXT, error TEXT);
         CREATE TABLE IF NOT EXISTS chat_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id TEXT, conversation_id TEXT, ts TEXT, who TEXT, text TEXT, card TEXT);
         CREATE INDEX IF NOT EXISTS chat_conv ON chat_messages (employee_id, conversation_id);
@@ -214,3 +218,24 @@ class RequestDB:
     def delete_conversation(self, employee_id, conversation_id):
         with self._lock:
             self.conn.execute('DELETE FROM chat_messages WHERE employee_id=? AND conversation_id=?', (employee_id, conversation_id)); self.conn.commit()
+
+    # ------------------------------------------------------------ contacts (email addresses entered in the app) and the email outbox
+    def get_contact(self, employee_id):
+        r = self.conn.execute('SELECT email FROM contacts WHERE employee_id=?', (employee_id,)).fetchone()
+        return r['email'] if r else None
+
+    def set_contact(self, employee_id, email):
+        with self._lock:
+            self.conn.execute('INSERT INTO contacts (employee_id, email, updated) VALUES (?,?,?) ON CONFLICT(employee_id) DO UPDATE SET email=excluded.email, updated=excluded.updated',
+                              (employee_id, email, dt.datetime.now().isoformat(timespec='seconds')))
+            self.conn.commit()
+
+    def log_email(self, to_addr, employee_id, subject, body, request_id, kind, status, error=''):
+        with self._lock:
+            cur = self.conn.execute('INSERT INTO emails (ts, to_addr, employee_id, subject, body, request_id, kind, status, error) VALUES (?,?,?,?,?,?,?,?,?)',
+                                    (dt.datetime.now().isoformat(timespec='seconds'), to_addr, employee_id, subject, body, request_id, kind, status, error or ''))
+            self.conn.commit()
+            return cur.lastrowid
+
+    def emails(self, limit=50):
+        return [dict(r) for r in self.conn.execute('SELECT * FROM emails ORDER BY id DESC LIMIT ?', (limit,)).fetchall()]
